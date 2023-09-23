@@ -1,0 +1,224 @@
+from dataclasses import dataclass
+
+from cheese import CastlingAvailability, Color, Piece, Square
+
+
+class FenValidationError(Exception):
+    pass
+
+
+class FenInvalidNumberOfGroupsError(FenValidationError):
+    pass
+
+
+class FenInvalidPiecePlacementError(FenValidationError):
+    pass
+
+
+class FenInvalidActiveColorError(FenValidationError):
+    pass
+
+
+class FenInvalidCastlingAvailabilityError(FenValidationError):
+    pass
+
+
+class FenInvalidEnPassantTargetError(FenValidationError):
+    pass
+
+
+class FenInvalidHalfmoveClockError(FenValidationError):
+    pass
+
+
+class FenInvalidFullmoveNumberError(FenValidationError):
+    pass
+
+
+@dataclass
+class FenParseResult:
+    piece_placement: list[Piece | None]
+    active_color: Color
+    castling_availability: CastlingAvailability
+    en_passant_target: Square | None
+    halfmove_clock: int
+    fullmove_number: int
+
+
+def _fen_validation_assert(cond: bool, e: FenValidationError) -> None:
+    if not cond:
+        raise e
+
+
+def _parse_piece_placement(v: str) -> list[Piece | None]:
+    from cheese.board import BOARD_SIZE
+
+    rank_size = 8
+    valid_rank_letters = {"p", "P", "k", "K", "q", "Q", "r", "R", "n", "N", "b", "B"}
+    piece_placement: list[Piece | None] = [None] * BOARD_SIZE
+    ranks = v.split("/")
+
+    def _piece_placement_validate_rank(rank: str) -> None:
+        rank_has_correct_characters = all(
+            [c in valid_rank_letters or c.isnumeric() for c in rank]
+        )
+        _fen_validation_assert(
+            rank_has_correct_characters,
+            FenInvalidPiecePlacementError(f"Rank {rank} contains invalid characters."),
+        )
+        rank_value = sum([1 if c in valid_rank_letters else int(c) for c in rank])
+        _fen_validation_assert(
+            rank_value == rank_size,
+            FenInvalidPiecePlacementError(
+                f"Rank {rank} does not represent {rank_size} squares."
+            ),
+        )
+
+    for i, rank in enumerate(ranks):
+        idx = BOARD_SIZE - rank_size * (i + 1)  # Start of each rank
+
+        _piece_placement_validate_rank(rank)
+
+        for c in rank:
+            if c in valid_rank_letters:
+                piece_placement[idx] = Piece.from_letter(c)
+                idx += 1
+            elif c.isnumeric():
+                idx += int(c)
+            else:
+                assert False, "unreachable"
+
+    return piece_placement
+
+
+def _parse_active_color(v: str) -> Color:
+    _fen_validation_assert(
+        v in {"w", "b"},
+        FenInvalidActiveColorError(f"Color {v} is invalid. Try 'w' or 'b'."),
+    )
+
+    match v:
+        case "w":
+            return Color.WHITE
+        case "b":
+            return Color.BLACK
+        case _:
+            assert False, "unreachable"
+
+
+def _parse_castling_availability(v: str) -> CastlingAvailability:
+    availability = CastlingAvailability(False, False, False, False)
+    if v == "-":
+        return availability
+
+    valid_castling_availability_chars = {"K", "k", "Q", "q"}
+    _fen_validation_assert(
+        len(v) <= 4
+        and all([c in valid_castling_availability_chars for c in v])
+        and len(set(v)) == len(v),  # No repeated chars
+        FenInvalidCastlingAvailabilityError(f"Invalid castling availability {v}."),
+    )
+
+    for c in v:
+        match c:
+            case "K":
+                availability.white_kingside = True
+            case "k":
+                availability.black_kingside = True
+            case "Q":
+                availability.white_queenside = True
+            case "q":
+                availability.black_queenside = True
+
+    return availability
+
+
+def _parse_en_passant_target(v: str) -> Square | None:
+    if v == "-":
+        return None
+
+    try:
+        return Square[v]
+    except KeyError:
+        raise FenInvalidEnPassantTargetError(
+            f"{v} does not represent a valid square."
+        ) from None
+
+
+def _parse_halfmove_clock(v: str) -> int:
+    try:
+        parsed_v = int(v)
+        _fen_validation_assert(
+            parsed_v >= 0,
+            FenInvalidHalfmoveClockError(
+                f"Expected halfmove clock to be at least 0, got {v}."
+            ),
+        )
+        return parsed_v
+    except ValueError:
+        raise FenInvalidHalfmoveClockError(
+            f"{v} does not represent a correct halfmove clock."
+        ) from None
+
+
+def _parse_fullmove_number(v: str) -> int:
+    try:
+        parsed_v = int(v)
+        _fen_validation_assert(
+            parsed_v >= 1,
+            FenInvalidFullmoveNumberError(
+                f"Expected fullmove number to be at least 1, got {v}."
+            ),
+        )
+        return parsed_v
+    except ValueError:
+        raise FenInvalidFullmoveNumberError(
+            f"{v} does not represent a correct fullmove number."
+        ) from None
+
+
+def parse(value: str) -> FenParseResult:
+    """
+    Parse `value` as a FEN, extracting all of its information.
+    Semantics of the position is not taken into consideration - meaning e.g. a position
+    without a king, or a position with more kings than it should, will not fail as long
+    as the FEN is well-formed.
+
+    Can raise multiple exceptions, all of which inherit `FenValidationError`.
+
+    For examples and explanations, see https://en.wikipedia.org/wiki/Forsyth-Edwards_Notation.
+    """
+
+    groups = value.split()
+    expected_ngroups = 6
+    _fen_validation_assert(
+        (actual_ngroups := len(groups)) == expected_ngroups,
+        FenInvalidNumberOfGroupsError(
+            f"Expected {expected_ngroups} groups, got {actual_ngroups}."
+        ),
+    )
+
+    (
+        s_piece_placement,
+        s_active_color,
+        s_castling_availability,
+        s_en_passant_target,
+        s_halfmove_clock,
+        s_fullmove_number,
+    ) = groups
+
+    piece_placement = _parse_piece_placement(s_piece_placement)
+    active_color = _parse_active_color(s_active_color)
+    castling_availability = _parse_castling_availability(s_castling_availability)
+    en_passant_target = _parse_en_passant_target(s_en_passant_target)
+    halfmove_clock = _parse_halfmove_clock(s_halfmove_clock)
+    fullmove_number = _parse_fullmove_number(s_fullmove_number)
+
+    return FenParseResult(
+        piece_placement,
+        active_color,
+        castling_availability,
+        en_passant_target,
+        halfmove_clock,
+        fullmove_number,
+    )

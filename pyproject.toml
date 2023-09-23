@@ -1,0 +1,60 @@
+[tool.poetry]
+name = "cheese"
+version = "0.1.0"
+description = "A simple chess engine"
+authors = ["Guilherme-Vasconcelos"]
+license = "AGPL-3.0-or-later"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.5.1"
+black = "^23.9.1"
+ruff = "^0.0.291"
+pytest = "^7.4.2"
+
+[tool.poetry.scripts]
+cheese = "cheese.__main__:main"
+
+[tool.mypy]
+strict = true
+
+[tool.ruff]
+# Check more groups at https://docs.astral.sh/ruff/rules/
+select = [
+    "F",
+    "E",
+    "W",
+    "I",
+    "N",
+    "UP",
+    "S",
+    "B",
+    "A",
+    "PERF",
+    "RUF"
+]
+# Same as black.
+line-length = 88
+# In general, try to keep ruff's target the same as poetry's. However, you can try to change it to
+# later versions in some cases (e.g. to check for new UP lints).
+target-version = "py311"
+ignore = [
+    # Tests aside, I only rely on assertions as a way of listing preconditions - hence it would be a
+    # bug if that precondition were not followed, and I consider it a UB to rely on behavior of a bug
+    # (so it doesn't really matter if the behavior is different in production vs development - it is a
+    # bug to rely on that behavior, whatever it is).
+    # Furthermore, I see no need for the -O flag, as it doesn't seem very useful right now.
+    "S101",
+    # Same reason as above.
+    "B011",
+]
+
+[tool.ruff.pycodestyle]
+ignore-overlong-task-comments = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

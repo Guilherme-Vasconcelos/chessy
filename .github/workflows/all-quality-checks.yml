@@ -1,0 +1,38 @@
+name: All quality checks
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Poetry
+      uses: abatilo/actions-poetry@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'poetry'
+
+    - name: Install dependencies
+      run: poetry install
+
+    - name: Run tests
+      run: poetry run pytest -v
+
+    - name: Check format
+      run: poetry run black --check .
+
+    - name: Lint
+      run: poetry run ruff .
+
+    - name: Check types
+      run: poetry run mypy .
