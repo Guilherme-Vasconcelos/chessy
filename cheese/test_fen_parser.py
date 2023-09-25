@@ -1,19 +1,31 @@
 import pytest
 
 import cheese.fen_parser as fp
-from cheese import CastlingAvailability, Color, Piece, Type
+from cheese import CastlingAvailability, Color, Piece, Square, Type
 from cheese.fen_parser import parse
+
+
+def build_fen(
+    piece_placement: str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
+    active_color: str = "w",
+    castling_availability: str = "KQkq",
+    en_passant_target: str = "-",
+    halfmove_clock: str = "0",
+    fullmove_count: str = "1",
+) -> str:
+    return (
+        f"{piece_placement} {active_color} {castling_availability} {en_passant_target} "
+        f"{halfmove_clock} {fullmove_count}"
+    ).strip()
 
 
 @pytest.mark.parametrize(
     "test_input",
     [
-        # Missing fullmove count.
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0",
-        # Missing piece placement.
-        "w KQkq - 0 1",
-        # Extra field 'a'.
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 a",
+        build_fen(fullmove_count=""),
+        build_fen(piece_placement=""),
+        # Extra trailing field
+        build_fen() + " a",
     ],
 )
 def test_fen_with_incorrect_number_of_groups(test_input: str) -> None:
@@ -25,13 +37,13 @@ def test_fen_with_incorrect_number_of_groups(test_input: str) -> None:
     "test_input",
     [
         # First rank only contains 7 letters and no numbers.
-        "nbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        build_fen(piece_placement="nbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"),
         # Same thing, but for last rank.
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN w KQkq - 0 1",
+        build_fen(piece_placement="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN"),
         # First rank has 1 extra letter.
-        "rrnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        build_fen(piece_placement="rrnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"),
         # Second rank contains invalid letter 'w'.
-        "rnbqkbnr/pppwpppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        build_fen(piece_placement="rnbqkbnr/pppwpppp/8/8/8/8/PPPPPPPP/RNBQKBNR"),
     ],
 )
 def test_fen_with_incorrect_piece_placements(test_input: str) -> None:
@@ -42,9 +54,9 @@ def test_fen_with_incorrect_piece_placements(test_input: str) -> None:
 @pytest.mark.parametrize(
     "test_input",
     [
-        "8/8/8/8/8/8/8/8 W KQkq - 0 1",
-        "8/8/8/8/8/8/8/8 B KQq - 0 1",
-        "8/8/8/8/8/8/8/8 l KQq - 0 1",
+        build_fen(active_color="W"),
+        build_fen(active_color="B"),
+        build_fen(active_color="l"),
     ],
 )
 def test_fen_with_incorrect_color(test_input: str) -> None:
@@ -55,9 +67,9 @@ def test_fen_with_incorrect_color(test_input: str) -> None:
 @pytest.mark.parametrize(
     "test_input",
     [
-        "8/8/8/8/8/8/8/8 w KQkq a9 0 1",
-        "8/8/8/8/8/8/8/8 w KQq 12351235 0 1",
-        "8/8/8/8/8/8/8/8 w KQq foobar 0 1",
+        build_fen(en_passant_target="a9"),
+        build_fen(en_passant_target="12345"),
+        build_fen(en_passant_target="foobar"),
     ],
 )
 def test_fen_with_incorrect_en_passant_target(test_input: str) -> None:
@@ -69,22 +81,29 @@ def test_fen_with_incorrect_en_passant_target(test_input: str) -> None:
     "test_input,expected_output",
     [
         (
-            "8/8/8/8/8/8/8/k7 b - - 123 1234",
+            build_fen(
+                piece_placement="8/8/8/8/8/8/8/k7",
+                active_color="b",
+                castling_availability="Kq",
+                en_passant_target="e3",
+                halfmove_clock="123",
+                fullmove_count="1234",
+            ),
             fp.FenParseResult(
                 [Piece(ptype=Type.KING, color=Color.BLACK)] + [None] * 63,
                 Color.BLACK,
-                CastlingAvailability(False, False, False, False),
-                None,
+                CastlingAvailability(True, False, False, True),
+                Square.e3,
                 123,
                 1234,
             ),
         ),
         (
-            "8/8/8/8/8/8/8/8 b KQq - 0 1",
+            build_fen(piece_placement="8/8/8/8/8/8/8/8"),
             fp.FenParseResult(
                 [None] * 64,
-                Color.BLACK,
-                CastlingAvailability(True, True, False, True),
+                Color.WHITE,
+                CastlingAvailability(True, True, True, True),
                 None,
                 0,
                 1,
@@ -92,8 +111,6 @@ def test_fen_with_incorrect_en_passant_target(test_input: str) -> None:
         ),
     ],
 )
-def test_fen_with_correct_piece_placements(
-    test_input: str, expected_output: fp.FenParseResult
-) -> None:
+def test_wellformed_fen(test_input: str, expected_output: fp.FenParseResult) -> None:
     result = parse(test_input)
     assert result == expected_output

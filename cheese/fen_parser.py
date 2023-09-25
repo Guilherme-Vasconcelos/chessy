@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
-from cheese import CastlingAvailability, Color, Piece, Square
+import cheese as c
+import cheese.board as cb
 
 
 class FenValidationError(Exception):
@@ -37,10 +38,10 @@ class FenInvalidFullmoveNumberError(FenValidationError):
 
 @dataclass
 class FenParseResult:
-    piece_placement: list[Piece | None]
-    active_color: Color
-    castling_availability: CastlingAvailability
-    en_passant_target: Square | None
+    piece_placement: list[c.Piece | None]
+    active_color: c.Color
+    castling_availability: c.CastlingAvailability
+    en_passant_target: c.Square | None
     halfmove_clock: int
     fullmove_number: int
 
@@ -50,12 +51,11 @@ def _fen_validation_assert(cond: bool, e: FenValidationError) -> None:
         raise e
 
 
-def _parse_piece_placement(v: str) -> list[Piece | None]:
-    from cheese.board import BOARD_SIZE
-
+def _parse_piece_placement(v: str) -> list[c.Piece | None]:
     rank_size = 8
+    board_size = cb.BOARD_SIZE
     valid_rank_letters = {"p", "P", "k", "K", "q", "Q", "r", "R", "n", "N", "b", "B"}
-    piece_placement: list[Piece | None] = [None] * BOARD_SIZE
+    piece_placement: list[c.Piece | None] = [None] * board_size
     ranks = v.split("/")
 
     def _piece_placement_validate_rank(rank: str) -> None:
@@ -75,23 +75,23 @@ def _parse_piece_placement(v: str) -> list[Piece | None]:
         )
 
     for i, rank in enumerate(ranks):
-        idx = BOARD_SIZE - rank_size * (i + 1)  # Start of each rank
+        idx = board_size - rank_size * (i + 1)  # Start of each rank
 
         _piece_placement_validate_rank(rank)
 
-        for c in rank:
-            if c in valid_rank_letters:
-                piece_placement[idx] = Piece.from_letter(c)
+        for char in rank:
+            if char in valid_rank_letters:
+                piece_placement[idx] = c.Piece.from_letter(char)
                 idx += 1
-            elif c.isnumeric():
-                idx += int(c)
+            elif char.isnumeric():
+                idx += int(char)
             else:
                 assert False, "unreachable"
 
     return piece_placement
 
 
-def _parse_active_color(v: str) -> Color:
+def _parse_active_color(v: str) -> c.Color:
     _fen_validation_assert(
         v in {"w", "b"},
         FenInvalidActiveColorError(f"Color {v} is invalid. Try 'w' or 'b'."),
@@ -99,15 +99,15 @@ def _parse_active_color(v: str) -> Color:
 
     match v:
         case "w":
-            return Color.WHITE
+            return c.Color.WHITE
         case "b":
-            return Color.BLACK
+            return c.Color.BLACK
         case _:
             assert False, "unreachable"
 
 
-def _parse_castling_availability(v: str) -> CastlingAvailability:
-    availability = CastlingAvailability(False, False, False, False)
+def _parse_castling_availability(v: str) -> c.CastlingAvailability:
+    availability = c.CastlingAvailability(False, False, False, False)
     if v == "-":
         return availability
 
@@ -119,8 +119,8 @@ def _parse_castling_availability(v: str) -> CastlingAvailability:
         FenInvalidCastlingAvailabilityError(f"Invalid castling availability {v}."),
     )
 
-    for c in v:
-        match c:
+    for char in v:
+        match char:
             case "K":
                 availability.white_kingside = True
             case "k":
@@ -133,12 +133,12 @@ def _parse_castling_availability(v: str) -> CastlingAvailability:
     return availability
 
 
-def _parse_en_passant_target(v: str) -> Square | None:
+def _parse_en_passant_target(v: str) -> c.Square | None:
     if v == "-":
         return None
 
     try:
-        return Square[v]
+        return c.Square[v]
     except KeyError:
         raise FenInvalidEnPassantTargetError(
             f"{v} does not represent a valid square."

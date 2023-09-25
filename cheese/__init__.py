@@ -2,11 +2,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
+from functools import total_ordering
 
 
 class Color(Enum):
     WHITE = auto()
     BLACK = auto()
+
+    def invert(self) -> Color:
+        match self:
+            case Color.WHITE:
+                return Color.BLACK
+            case Color.BLACK:
+                return Color.WHITE
 
 
 class Type(Enum):
@@ -25,14 +33,9 @@ class Piece:
 
     @staticmethod
     def from_letter(letter: str) -> Piece:
-        """
-        Creates a Piece from a given letter code.
+        """Create a Piece from a given letter code."""
 
-        Raises AssertionError if an incorrect letter is passed. Ensure it is either 'p',
-        'k', 'q', 'r', 'n', 'b' (uppercase for white color, lowercase for black color).
-        """
-
-        assert len(letter) == 1 and letter[0].lower() in {"p", "k", "q", "r", "n", "b"}
+        assert len(letter) == 1 and letter.lower() in {"p", "k", "q", "r", "n", "b"}
 
         t: Type
         match letter.lower():
@@ -53,7 +56,28 @@ class Piece:
 
         return Piece(ptype=t, color=Color.WHITE if letter.isupper() else Color.BLACK)
 
+    def to_letter(self) -> str:
+        """Convert the current Piece into a letter code."""
 
+        ret: str
+        match self.ptype:
+            case Type.PAWN:
+                ret = "p"
+            case Type.KING:
+                ret = "k"
+            case Type.QUEEN:
+                ret = "q"
+            case Type.ROOK:
+                ret = "r"
+            case Type.KNIGHT:
+                ret = "n"
+            case Type.BISHOP:
+                ret = "b"
+
+        return ret.upper() if self.color.value == Color.WHITE.value else ret.lower()
+
+
+@total_ordering
 class Square(Enum):
     a1 = 0  # To make sure we can index Board through squares.
     b1 = auto()
@@ -127,6 +151,17 @@ class Square(Enum):
     g8 = auto()
     h8 = auto()
 
+    def rank(self) -> int:
+        """Get the rank, from 0 to 7. Ranks are horizontal rows."""
+        return self.value // 8
+
+    def file(self) -> int:
+        """Get the file, from 0 to 7. Files are vertical rows."""
+        return self.value % 8
+
+    def __lt__(self, other: Square) -> bool:
+        return self.value < other.value
+
 
 @dataclass
 class CastlingAvailability:
@@ -134,3 +169,34 @@ class CastlingAvailability:
     white_queenside: bool
     black_kingside: bool
     black_queenside: bool
+
+    def disable_for_color(self, color: Color) -> None:
+        if color == Color.WHITE:
+            self.white_kingside = False
+            self.white_queenside = False
+        else:
+            self.black_kingside = False
+            self.black_queenside = False
+
+    def disable_for_square(self, square: Square) -> None:
+        if square == Square.a1:
+            self.white_queenside = False
+        elif square == Square.h1:
+            self.white_kingside = False
+        elif square == Square.a8:
+            self.black_queenside = False
+        elif square == Square.h8:
+            self.black_kingside = False
+
+
+@dataclass
+class Move:
+    source: Square
+    target: Square
+    promotion: Type | None = None
+
+    def __post_init__(self) -> None:
+        if self.promotion is not None:
+            target_rank = self.target.rank()
+            assert target_rank in {0, 7}
+            assert self.promotion not in {Type.KING, Type.PAWN}

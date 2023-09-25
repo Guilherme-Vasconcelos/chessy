@@ -33,6 +33,7 @@ select = [
     "S",
     "B",
     "A",
+    "SIM",
     "PERF",
     "RUF"
 ]
@@ -45,7 +46,7 @@ ignore = [
     # Tests aside, I only rely on assertions as a way of listing preconditions - hence it would be a
     # bug if that precondition were not followed, and I consider it a UB to rely on behavior of a bug
     # (so it doesn't really matter if the behavior is different in production vs development - it is a
-    # bug to rely on that behavior, whatever it is).
+    # UB to rely on that behavior, whatever it is).
     # Furthermore, I see no need for the -O flag, as it doesn't seem very useful right now.
     "S101",
     # Same reason as above.
