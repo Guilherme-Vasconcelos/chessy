@@ -60,7 +60,7 @@ def _parse_piece_placement(v: str) -> list[c.Piece | None]:
 
     def _piece_placement_validate_rank(rank: str) -> None:
         rank_has_correct_characters = all(
-            [c in valid_rank_letters or c.isnumeric() for c in rank]
+            c in valid_rank_letters or c.isnumeric() for c in rank
         )
         _fen_validation_assert(
             rank_has_correct_characters,
@@ -114,7 +114,7 @@ def _parse_castling_availability(v: str) -> c.CastlingAvailability:
     valid_castling_availability_chars = {"K", "k", "Q", "q"}
     _fen_validation_assert(
         len(v) <= 4
-        and all([c in valid_castling_availability_chars for c in v])
+        and all(c in valid_castling_availability_chars for c in v)
         and len(set(v)) == len(v),  # No repeated chars
         FenInvalidCastlingAvailabilityError(f"Invalid castling availability {v}."),
     )
@@ -129,6 +129,8 @@ def _parse_castling_availability(v: str) -> c.CastlingAvailability:
                 availability.white_queenside = True
             case "q":
                 availability.black_queenside = True
+            case _:
+                assert False, "unreachable"
 
     return availability
 

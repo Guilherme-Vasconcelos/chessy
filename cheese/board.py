@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 import cheese as c
@@ -9,9 +10,22 @@ import cheese.movegen as cm
 BOARD_SIZE = 64
 
 
+class BoardError(Exception):
+    ...
+
+
+class IllegalMoveError(BoardError):
+    legal_moves: Iterable[c.Move]
+
+    def __init__(self, message: str, legal_moves: Iterable[c.Move]) -> None:
+        super().__init__(message)
+        self.legal_moves = legal_moves
+
+
 @dataclass
 class MoveResult:
     is_capture: bool
+    moved_piece: c.Piece
 
 
 @dataclass
@@ -24,6 +38,12 @@ class Board:
     fullmove_number: int
 
     def __post_init__(self) -> None:
+        # TODO: Make a `_validate_position` method.
+        # - 1 king for each side.
+        # - no pawns on ranks 0 and 7.
+        # - Only at most 1 player can be in check. And if someone is in check,
+        #   that someone must be `self.active_color`.
+        # - Plus everything below.
         assert len(self.state) == BOARD_SIZE
         assert self.halfmove_clock >= 0
         assert self.fullmove_number >= 1
@@ -45,20 +65,48 @@ class Board:
         return self.state[square.value]
 
     def _set_piece(self, square: c.Square, piece: c.Piece | None) -> None:
-        """
-        Unconditionally set `square` to contain `piece`.
-        You're probably looking for `make_move` instead.
-        """
-
         self.state[square.value] = piece
 
+    def is_in_check(self, color: c.Color | None = None) -> bool:
+        """
+        Verify if the `color` is currently in check.
+
+        If `color` is None, the verification is based on `self.active_color`.
+        """
+
+        if color is None:
+            color = self.active_color
+
+        king_position: c.Square | None = None
+        for i, p in enumerate(self.state):
+            if p is not None and p.ptype == c.Type.KING and p.color == color:
+                king_position = c.Square(i)
+                break
+        assert king_position is not None
+
+        possible_attackers_positions = cm.generate_attacks(
+            self, king_position, c.Piece(c.Type.QUEEN, color)
+        ) | cm.generate_attacks(self, king_position, c.Piece(c.Type.KNIGHT, color))
+        for position in possible_attackers_positions:
+            if (
+                (attacker := self.state[position.value]) is not None
+                and attacker.color == color.invert()
+                # TODO (perf): We don't need to generate every single attack, but rather
+                # just the ones that are likely to attack `king_position`.
+                and king_position in cm.generate_attacks(self, position, attacker)
+            ):
+                return True
+
+        return False
+
     def _validate_move(self, move: c.Move) -> None:
-        legal_moves = cm.Movegen.generate_legal_moves(self, move.source)
+        legal_moves = cm.generate_legal_moves(self, move.source)
 
         if move not in legal_moves:
-            raise ValueError(
-                f"Move from {move.source} to {move.target} is not legal. "
-                f"Legal moves are: {legal_moves}."
+            raise IllegalMoveError(
+                f"Move from {move.source} to {move.target} is illegal. "
+                f"See `legal_moves` for available moves starting from {move.source}.",
+                legal_moves,
             )
 
     def _move_is_castling(self, move: c.Move) -> bool:
@@ -84,13 +132,16 @@ class Board:
 
     def _move_is_en_passant(self, move: c.Move) -> bool:
         return (
+            # If we are moving a pawn to an en passant target, we can't possibly
+            # have anything other than an en passant. Otherwise, a double pawn push
+            # could not have happened.
             (source_piece := self.get_piece(move.source)) is not None
             and source_piece.ptype == c.Type.PAWN
             and self.en_passant_target is not None
             and move.target == self.en_passant_target
         )
 
-    def _make_move_state_target_update_by_promotion(self, move: c.Move) -> None:
+    def _make_move__state_target_update_by_promotion(self, move: c.Move) -> None:
         source_piece = self.get_piece(move.source)
 
         assert source_piece is not None
@@ -100,7 +151,9 @@ class Board:
             move.target, c.Piece(color=source_piece.color, ptype=move.promotion)
         )
 
-    def _make_move_state_target_and_rook_update_by_castling(self, move: c.Move) -> None:
+    def _make_move__state_target_and_rook_update_by_castling(
+        self, move: c.Move
+    ) -> None:
         source_piece = self.get_piece(move.source)
         assert source_piece is not None
 
@@ -123,25 +176,26 @@ class Board:
             c.Square.c8: c.Square.d8,
         }
 
+        previous_rook_position = previous_rook_positions_by_move_target[move.target]
         self._set_piece(move.target, source_piece)
         self._set_piece(
             new_rook_positions_by_move_target[move.target],
-            c.Piece(c.Type.ROOK, source_piece.color),
+            self.get_piece(previous_rook_position),
         )
-        self._set_piece(previous_rook_positions_by_move_target[move.target], None)
+        self._set_piece(previous_rook_position, None)
 
-    def _make_move_state_target_update_by_en_passant(self, move: c.Move) -> None:
+    def _make_move__state_target_update_by_en_passant(self, move: c.Move) -> None:
         source_piece = self.get_piece(move.source)
         assert self.en_passant_target is not None
         assert source_piece is not None
 
-        direction_factor = -1 if source_piece.color == c.Color.WHITE else 1
+        direction_factor = -1 * source_piece.direction_factor()
         single_step = 8 * direction_factor
 
         self._set_piece(move.target, source_piece)
         self._set_piece(c.Square(self.en_passant_target.value + single_step), None)
 
-    def _make_move_state_update(self, move: c.Move) -> MoveResult:
+    def _make_move__state_update(self, move: c.Move) -> MoveResult:
         is_capture = self.get_piece(move.target) is not None
         source_piece = self.get_piece(move.source)
         assert source_piece is not None
@@ -151,18 +205,18 @@ class Board:
         is_en_passant = self._move_is_en_passant(move)
 
         if is_promotion:
-            self._make_move_state_target_update_by_promotion(move)
+            self._make_move__state_target_update_by_promotion(move)
         elif is_castling:
-            self._make_move_state_target_and_rook_update_by_castling(move)
+            self._make_move__state_target_and_rook_update_by_castling(move)
         elif is_en_passant:
             is_capture = True
-            self._make_move_state_target_update_by_en_passant(move)
+            self._make_move__state_target_update_by_en_passant(move)
         else:
             self._set_piece(move.target, source_piece)
 
         self._set_piece(move.source, None)
 
-        return MoveResult(is_capture)
+        return MoveResult(is_capture, source_piece)
 
     def _update_castling_availability_after_move(
         self, moved_piece: c.Piece, move_source: c.Square
@@ -179,7 +233,7 @@ class Board:
         if moved_piece.ptype != c.Type.PAWN:
             return
 
-        direction_factor = 1 if moved_piece.color == c.Color.WHITE else -1
+        direction_factor = moved_piece.direction_factor()
         single_step = 8 * direction_factor
         double_step = 2 * single_step
         did_double_push = (
@@ -192,8 +246,7 @@ class Board:
         en_passant_square = c.Square(performed_move.source.value + single_step)
         target_file = performed_move.target.file()
         for offset in [-1, 1]:
-            # If we are at file a, do not wrap around
-            # (because then it would check file h). And same thing for file h -> a.
+            # If we are at an edge file, prevent wrapping around the board.
             if 0 <= target_file + offset <= 7:
                 neighbor = self.get_piece(
                     c.Square(performed_move.target.value + offset)
@@ -211,19 +264,25 @@ class Board:
         if is_fullcount_increment:
             self.fullmove_number += 1
 
-    def make_move(self, move: c.Move) -> None:
+    def make_move(self, move: c.Move, *, bypass_validation: bool = False) -> None:
         """
         Validate and perform the move.
 
-        ValueError is raised if the move is illegal.
+        IllegalMoveError is raised if the move is illegal.
+
+        If `bypass_validation` is set to True, illegal moves will be accepted.
+        Be very careful with this option, as it may lead to a bad state. For example,
+        depending on how you move a pawn, the board may think you're allowing
+        an en passant. You should only use this if you have already used other means
+        to figure out that the move is pseudolegal.
         """
 
-        self._validate_move(move)
-        moved_piece = self.get_piece(move.source)
-        assert moved_piece is not None
+        if not bypass_validation:
+            self._validate_move(move)
 
-        move_result = self._make_move_state_update(move)
+        move_result = self._make_move__state_update(move)
         is_capture = move_result.is_capture
+        moved_piece = move_result.moved_piece
 
         self._update_castling_availability_after_move(moved_piece, move.source)
         self._update_en_passant_target_after_move(moved_piece, move)

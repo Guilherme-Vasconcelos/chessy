@@ -26,7 +26,7 @@ class Type(Enum):
     KING = auto()
 
 
-@dataclass
+@dataclass(frozen=True)
 class Piece:
     ptype: Type
     color: Color
@@ -75,6 +75,19 @@ class Piece:
                 ret = "b"
 
         return ret.upper() if self.color.value == Color.WHITE.value else ret.lower()
+
+    def direction_factor(self) -> int:
+        """
+        If the current piece is a pawn, return its direction factor:
+        1 for white, -1 for black.
+
+        If the current piece is non-pawn, raises ValueError.
+        """
+
+        if self.ptype != Type.PAWN:
+            raise ValueError("Non-pawn pieces do not have a defined direction_factor")
+
+        return 1 if self.color == Color.WHITE else -1
 
 
 @total_ordering
@@ -189,7 +202,7 @@ class CastlingAvailability:
             self.black_kingside = False
 
 
-@dataclass
+@dataclass(frozen=True)
 class Move:
     source: Square
     target: Square
