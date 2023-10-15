@@ -11,7 +11,7 @@ BOARD_SIZE = 64
 
 
 class BoardError(Exception):
-    ...
+    pass
 
 
 class IllegalMoveError(BoardError):
@@ -20,6 +20,10 @@ class IllegalMoveError(BoardError):
     def __init__(self, message: str, legal_moves: Iterable[c.Move]) -> None:
         super().__init__(message)
         self.legal_moves = legal_moves
+
+
+class UnreachablePositionError(BoardError):
+    pass
 
 
 @dataclass
@@ -38,15 +42,35 @@ class Board:
     fullmove_number: int
 
     def __post_init__(self) -> None:
-        # TODO: Make a `_validate_position` method.
+        self._validate_current_position()
+
+    def _validate_current_position(self) -> None:
+        def assert_position_cond(cond: bool, message: str) -> None:
+            if not cond:
+                raise UnreachablePositionError(message)
+
+        assert_position_cond(
+            (stlen := len(self.state)) == BOARD_SIZE,
+            f"Board has invalid size {stlen}, expected {BOARD_SIZE}",
+        )
+
+        assert_position_cond(
+            self.halfmove_clock >= 0,
+            f"Invalid halfmove_clock {self.halfmove_clock}, "
+            "expected a non-negative integer",
+        )
+
+        assert_position_cond(
+            self.fullmove_number >= 1,
+            f"Invalid fullmove_number {self.fullmove_number}, "
+            "expected a strictly positive integer",
+        )
+
+        # TODO:
         # - 1 king for each side.
-        # - no pawns on ranks 0 and 7.
+        # - no pawns on ranks 0 and 7 (they would need to have promoted).
         # - Only at most 1 player can be in check. And if someone is in check,
         #   that someone must be `self.active_color`.
-        # - Plus everything below.
-        assert len(self.state) == BOARD_SIZE
-        assert self.halfmove_clock >= 0
-        assert self.fullmove_number >= 1
 
     @staticmethod
     def from_fen(fen: str) -> Board:
@@ -61,11 +85,20 @@ class Board:
             result.fullmove_number,
         )
 
-    def get_piece(self, square: c.Square) -> c.Piece | None:
+    def get_piece_by_square(self, square: c.Square) -> c.Piece | None:
         return self.state[square.value]
 
-    def _set_piece(self, square: c.Square, piece: c.Piece | None) -> None:
+    def _set_piece_by_square(self, square: c.Square, piece: c.Piece | None) -> None:
         self.state[square.value] = piece
+
+    def _get_king_position_by_color(self, color: c.Color) -> c.Square:
+        king_position: c.Square | None = None
+        for i, p in enumerate(self.state):
+            if p is not None and p.ptype == c.Type.KING and p.color == color:
+                king_position = c.Square(i)
+                break
+        assert king_position is not None
+        return king_position
 
     def is_in_check(self, color: c.Color | None = None) -> bool:
         """
@@ -77,13 +110,7 @@ class Board:
         if color is None:
             color = self.active_color
 
-        king_position: c.Square | None = None
-        for i, p in enumerate(self.state):
-            if p is not None and p.ptype == c.Type.KING and p.color == color:
-                king_position = c.Square(i)
-                break
-        assert king_position is not None
-
+        king_position = self._get_king_position_by_color(color)
         possible_attackers_positions = cm.generate_attacks(
             self, king_position, c.Piece(c.Type.QUEEN, color)
         ) | cm.generate_attacks(self, king_position, c.Piece(c.Type.KNIGHT, color))
@@ -116,7 +143,7 @@ class Board:
         black_king_castling_targets = {c.Square.g8, c.Square.c8}
 
         return (
-            (source_piece := self.get_piece(move.source)) is not None
+            (source_piece := self.get_piece_by_square(move.source)) is not None
             and source_piece.ptype == c.Type.KING
             and (
                 (
@@ -135,26 +162,26 @@ class Board:
             # If we are moving a pawn to an en passant target, we can't possibly
             # have anything other than an en passant. Otherwise, a double pawn push
             # could not have happened.
-            (source_piece := self.get_piece(move.source)) is not None
+            (source_piece := self.get_piece_by_square(move.source)) is not None
             and source_piece.ptype == c.Type.PAWN
             and self.en_passant_target is not None
             and move.target == self.en_passant_target
         )
 
     def _make_move__state_target_update_by_promotion(self, move: c.Move) -> None:
-        source_piece = self.get_piece(move.source)
+        source_piece = self.get_piece_by_square(move.source)
 
         assert source_piece is not None
         assert move.promotion is not None
 
-        self._set_piece(
+        self._set_piece_by_square(
             move.target, c.Piece(color=source_piece.color, ptype=move.promotion)
         )
 
     def _make_move__state_target_and_rook_update_by_castling(
         self, move: c.Move
     ) -> None:
-        source_piece = self.get_piece(move.source)
+        source_piece = self.get_piece_by_square(move.source)
         assert source_piece is not None
 
         previous_rook_positions_by_move_target = {
@@ -177,27 +204,29 @@ class Board:
         }
 
         previous_rook_position = previous_rook_positions_by_move_target[move.target]
-        self._set_piece(move.target, source_piece)
-        self._set_piece(
+        self._set_piece_by_square(move.target, source_piece)
+        self._set_piece_by_square(
             new_rook_positions_by_move_target[move.target],
-            self.get_piece(previous_rook_position),
+            self.get_piece_by_square(previous_rook_position),
         )
-        self._set_piece(previous_rook_position, None)
+        self._set_piece_by_square(previous_rook_position, None)
 
     def _make_move__state_target_update_by_en_passant(self, move: c.Move) -> None:
-        source_piece = self.get_piece(move.source)
+        source_piece = self.get_piece_by_square(move.source)
         assert self.en_passant_target is not None
         assert source_piece is not None
 
         direction_factor = -1 * source_piece.direction_factor()
         single_step = 8 * direction_factor
 
-        self._set_piece(move.target, source_piece)
-        self._set_piece(c.Square(self.en_passant_target.value + single_step), None)
+        self._set_piece_by_square(move.target, source_piece)
+        self._set_piece_by_square(
+            c.Square(self.en_passant_target.value + single_step), None
+        )
 
     def _make_move__state_update(self, move: c.Move) -> MoveResult:
-        is_capture = self.get_piece(move.target) is not None
-        source_piece = self.get_piece(move.source)
+        is_capture = self.get_piece_by_square(move.target) is not None
+        source_piece = self.get_piece_by_square(move.source)
         assert source_piece is not None
 
         is_promotion = move.promotion is not None
@@ -212,9 +241,9 @@ class Board:
             is_capture = True
             self._make_move__state_target_update_by_en_passant(move)
         else:
-            self._set_piece(move.target, source_piece)
+            self._set_piece_by_square(move.target, source_piece)
 
-        self._set_piece(move.source, None)
+        self._set_piece_by_square(move.source, None)
 
         return MoveResult(is_capture, source_piece)
 
@@ -248,7 +277,7 @@ class Board:
         for offset in [-1, 1]:
             # If we are at an edge file, prevent wrapping around the board.
             if 0 <= target_file + offset <= 7:
-                neighbor = self.get_piece(
+                neighbor = self.get_piece_by_square(
                     c.Square(performed_move.target.value + offset)
                 )
                 if neighbor and neighbor.ptype == c.Type.PAWN:
@@ -309,7 +338,7 @@ class Board:
             print(f"{friendly_rank} |", end="")
 
             for j in range(8):
-                if (piece := self.get_piece(c.Square(i + j))) is None:
+                if (piece := self.get_piece_by_square(c.Square(i + j))) is None:
                     print(" - ", end="")
                 else:
                     print(f" {piece.to_letter()} ", end="")

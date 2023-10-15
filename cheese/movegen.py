@@ -50,7 +50,7 @@ def _apply_directional_add(
             break
 
         if blockers is not None:
-            is_blocker_hit = blockers.get_piece(new_square) is not None
+            is_blocker_hit = blockers.get_piece_by_square(new_square) is not None
             if is_blocker_hit:
                 _ok_next()
                 break
@@ -214,13 +214,13 @@ def generate_attacks(
 def _generate_nonpawn_pseudolegal_standard_moves(
     board: cb.Board, square: c.Square
 ) -> set[c.Move]:
-    piece = board.get_piece(square)
+    piece = board.get_piece_by_square(square)
     assert piece is not None
 
     attacks = generate_attacks(board, square, piece)
     result: set[c.Move] = set()
     for attack in attacks:
-        maybe_target_piece = board.get_piece(attack)
+        maybe_target_piece = board.get_piece_by_square(attack)
         # TODO (perf): For attacks by sliding pieces, we only need to check the edge moves.
         # Every non-edge attack is automatically a move since it is not blocked
         # (hence intermediate squares can only be empty).
@@ -256,7 +256,8 @@ def _generate_castling_moves(board: cb.Board, color: c.Color) -> set[c.Move]:
 
     def path_is_clear(castling_path: Literal["K", "Q", "k", "q"]) -> bool:
         return all(
-            board.get_piece(s) is None for s in castling_paths[castling_path]["path"]
+            board.get_piece_by_square(s) is None
+            for s in castling_paths[castling_path]["path"]
         )
 
     def path_has_no_intermediate_checks(
@@ -302,7 +303,7 @@ def _generate_castling_moves(board: cb.Board, color: c.Color) -> set[c.Move]:
 
 
 def _generate_pawns_pseudolegal_moves(board: cb.Board, square: c.Square) -> set[c.Move]:
-    pawn = board.get_piece(square)
+    pawn = board.get_piece_by_square(square)
     assert pawn is not None
     result: set[c.Move] = set()
 
@@ -334,7 +335,7 @@ def _generate_pawns_pseudolegal_moves(board: cb.Board, square: c.Square) -> set[
     attacks = generate_attacks(board, square, pawn)
     for attack in attacks:
         if (
-            (maybe_attacked_piece := board.get_piece(attack)) is not None
+            (maybe_attacked_piece := board.get_piece_by_square(attack)) is not None
             and maybe_attacked_piece.color == pawn.color.invert()
         ) or attack == board.en_passant_target:
             move = c.Move(square, attack)
@@ -342,7 +343,7 @@ def _generate_pawns_pseudolegal_moves(board: cb.Board, square: c.Square) -> set[
 
     direction_factor = pawn.direction_factor()
     single_step = c.Square(square.value + 8 * direction_factor)
-    if single_step_is_clear := board.get_piece(single_step) is None:
+    if single_step_is_clear := board.get_piece_by_square(single_step) is None:
         move = c.Move(square, single_step)
         append_maybe_promotion_move(move)
 
@@ -351,7 +352,7 @@ def _generate_pawns_pseudolegal_moves(board: cb.Board, square: c.Square) -> set[
     )
     if single_step_is_clear and is_first_pawn_move:
         double_step = c.Square(single_step.value + 8 * direction_factor)
-        if board.get_piece(double_step) is None:
+        if board.get_piece_by_square(double_step) is None:
             move = c.Move(square, double_step)
             result.add(move)
 
@@ -359,7 +360,9 @@ def _generate_pawns_pseudolegal_moves(board: cb.Board, square: c.Square) -> set[
 
 
 def _generate_pseudolegal_moves(board: cb.Board, square: c.Square) -> set[c.Move]:
-    if (piece := board.get_piece(square)) is None or piece.color != board.active_color:
+    if (
+        piece := board.get_piece_by_square(square)
+    ) is None or piece.color != board.active_color:
         return set()
 
     match piece.ptype:

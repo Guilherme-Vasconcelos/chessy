@@ -10,9 +10,9 @@ readme = "README.md"
 python = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.5.1"
+mypy = "^1.6.0"
 black = "^23.9.1"
-ruff = "^0.0.291"
+ruff = "^0.1.0"
 pytest = "^7.4.2"
 
 [tool.poetry.scripts]
@@ -20,6 +20,8 @@ cheese = "cheese.__main__:main"
 
 [tool.mypy]
 strict = true
+# Same as poetry.
+python_version = "3.11"
 
 [tool.ruff]
 # Check more groups at https://docs.astral.sh/ruff/rules/
@@ -47,15 +49,13 @@ select = [
 ]
 # Same as black.
 line-length = 88
-# In general, try to keep ruff's target the same as poetry's. However, you can try to change it to
-# later versions in some cases (e.g. to check for new UP lints).
+# Same as poetry.
 target-version = "py311"
 ignore = [
-    # Tests aside, I only rely on assertions as a way of listing preconditions - hence it would be a
-    # bug if that precondition were not followed, and I consider it a UB to rely on behavior of a bug
-    # (so it doesn't really matter if the behavior is different in production vs development - it is a
-    # UB to rely on that behavior, whatever it is).
-    # Furthermore, I see no need for the -O flag, as it doesn't seem very useful right now.
+    # Tests aside, I use asserts only for specifying preconditions or states that are known to be true.
+    # If these preconditions aren't met, it's a bug. Relying on buggy behavior is non-specified behavior,
+    # so it doesn't matter if the behavior varies between production and development.
+    # Furthermore, the -O flag doesn't seem very useful at the moment.
     "S101",
     # Same reason as above.
     "B011",

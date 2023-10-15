@@ -2,7 +2,8 @@
 A simple chess engine.
 
 ## Getting started
-1. Create a venv with `python -m venv .venv`.
+1. Create a venv with `python -m venv .venv`. The exact Python required version can be found at
+[pyproject.toml](./pyproject.toml).
 2. Install [poetry](https://python-poetry.org/) and run `$ poetry install` to install dependencies.
 3. Run it with `$ poetry run cheese` or manually with `$ .venv/bin/activate` followed by `$ python -m cheese`.
 
