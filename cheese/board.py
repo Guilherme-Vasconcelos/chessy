@@ -276,7 +276,7 @@ class Board:
         target_file = performed_move.target.file()
         for offset in [-1, 1]:
             # If we are at an edge file, prevent wrapping around the board.
-            if 0 <= target_file + offset <= 7:
+            if 0 <= target_file + offset <= c.Square.last_file():
                 neighbor = self.get_piece_by_square(
                     c.Square(performed_move.target.value + offset)
                 )

@@ -16,7 +16,9 @@ class _DirectionalAdd:
 
     def __post_init__(self) -> None:
         if self.prevented_files is not None:
-            assert all(0 <= file <= 7 for file in self.prevented_files)
+            assert all(
+                0 <= file <= c.Square.last_file() for file in self.prevented_files
+            )
 
 
 def _apply_directional_add(
@@ -305,6 +307,9 @@ def _generate_castling_moves(board: cb.Board, color: c.Color) -> set[c.Move]:
 def _generate_pawns_pseudolegal_moves(board: cb.Board, square: c.Square) -> set[c.Move]:
     pawn = board.get_piece_by_square(square)
     assert pawn is not None
+
+    seventh_rank = 6
+    second_rank = 1
     result: set[c.Move] = set()
 
     def append_maybe_promotion_move(move: c.Move) -> None:
@@ -314,9 +319,9 @@ def _generate_pawns_pseudolegal_moves(board: cb.Board, square: c.Square) -> set[
             pawn
             is not None
         )
-        is_promotion = (pawn.color == c.Color.WHITE and square.rank() == 6) or (
-            pawn.color == c.Color.BLACK and square.rank() == 1
-        )
+        is_promotion = (
+            pawn.color == c.Color.WHITE and square.rank() == seventh_rank
+        ) or (pawn.color == c.Color.BLACK and square.rank() == second_rank)
         if is_promotion:
             result.update(
                 [
@@ -347,9 +352,9 @@ def _generate_pawns_pseudolegal_moves(board: cb.Board, square: c.Square) -> set[
         move = c.Move(square, single_step)
         append_maybe_promotion_move(move)
 
-    is_first_pawn_move = (pawn.color == c.Color.WHITE and square.rank() == 1) or (
-        pawn.color == c.Color.BLACK and square.rank() == 6
-    )
+    is_first_pawn_move = (
+        pawn.color == c.Color.WHITE and square.rank() == second_rank
+    ) or (pawn.color == c.Color.BLACK and square.rank() == seventh_rank)
     if single_step_is_clear and is_first_pawn_move:
         double_step = c.Square(single_step.value + 8 * direction_factor)
         if board.get_piece_by_square(double_step) is None:

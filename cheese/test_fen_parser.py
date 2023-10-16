@@ -5,7 +5,7 @@ from cheese import CastlingAvailability, Color, Piece, Square, Type
 from cheese.fen_parser import parse
 
 
-def build_fen(
+def build_fen(  # noqa: PLR0913
     piece_placement: str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
     active_color: str = "w",
     castling_availability: str = "KQkq",

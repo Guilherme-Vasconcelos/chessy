@@ -172,6 +172,11 @@ class Square(Enum):
         """Get the file, from 0 to 7. Files are vertical rows."""
         return self.value % 8
 
+    @classmethod
+    def last_file(cls) -> int:
+        # Anything on the h file works.
+        return cls.h7.file()
+
     def __lt__(self, other: Square) -> bool:
         return self.value < other.value
 

@@ -44,6 +44,8 @@ select = [
     "G",
     "PIE",
     "SIM",
+    "PTH",
+    "PL",
     "PERF",
     "RUF"
 ]

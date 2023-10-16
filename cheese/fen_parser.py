@@ -112,8 +112,9 @@ def _parse_castling_availability(v: str) -> c.CastlingAvailability:
         return availability
 
     valid_castling_availability_chars = {"K", "k", "Q", "q"}
+    max_castling_availability_size = 4
     _fen_validation_assert(
-        len(v) <= 4
+        len(v) <= max_castling_availability_size
         and all(c in valid_castling_availability_chars for c in v)
         and len(set(v)) == len(v),  # No repeated chars
         FenInvalidCastlingAvailabilityError(f"Invalid castling availability {v}."),
