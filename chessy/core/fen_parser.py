@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-import cheese.core as c
-import cheese.core.board as cb
-import cheese.utils as ut
+import chessy.core as c
+import chessy.core.board as cb
+import chessy.utils as ut
 
 
 class FenValidationError(Exception):

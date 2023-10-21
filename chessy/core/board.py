@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-import cheese.core as c
-import cheese.core.fen_parser as cf
-import cheese.core.movegen as cm
+import chessy.core as c
+import chessy.core.fen_parser as cf
+import chessy.core.movegen as cm
 
 BOARD_SIZE = 64
 

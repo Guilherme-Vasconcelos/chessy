@@ -1,6 +1,6 @@
 import pytest
 
-import cheese.utils as ut
+import chessy.utils as ut
 
 
 def test_unreachable() -> None:

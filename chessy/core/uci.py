@@ -5,12 +5,12 @@ from enum import Enum, auto
 from threading import Thread
 from typing import NoReturn
 
-import cheese
-import cheese.core as c
-import cheese.core.board as cb
-import cheese.core.evaluator as ce
-import cheese.core.fen_parser as fp
-import cheese.utils as ut
+import chessy
+import chessy.core as c
+import chessy.core.board as cb
+import chessy.core.evaluator as ce
+import chessy.core.fen_parser as fp
+import chessy.utils as ut
 
 logger = logging.getLogger(__name__)
 
@@ -138,8 +138,8 @@ class Engine:
             case _Uci():
                 self._send_engine_command(
                     _Id(
-                        f"{cheese.__name__} v{cheese.__version__}",
-                        cheese.__author__,
+                        f"{chessy.__name__} v{chessy.__version__}",
+                        chessy.__author__,
                     )
                 )
                 self._send_engine_command(_UciOk())

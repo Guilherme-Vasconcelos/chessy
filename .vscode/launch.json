@@ -5,10 +5,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "cheese (core)",
+      "name": "chessy (core)",
       "type": "python",
       "request": "launch",
-      "module": "cheese.core",
+      "module": "chessy.core",
       "justMyCode": true
     }
   ]

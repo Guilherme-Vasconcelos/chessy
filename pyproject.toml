@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "cheese"
+name = "chessy"
 version = "0.1.0"
 description = "A simple chess engine"
 authors = ["Guilherme Vasconcelos"]
@@ -16,7 +16,7 @@ ruff = "^0.1.0"
 pytest = "^7.4.2"
 
 [tool.poetry.scripts]
-cheese = "cheese.core.__main__:main"
+chessy = "chessy.core.__main__:main"
 
 [tool.mypy]
 strict = true

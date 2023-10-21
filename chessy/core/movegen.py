@@ -5,8 +5,8 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Literal, TypedDict
 
-import cheese.core as c
-import cheese.core.board as cb
+import chessy.core as c
+import chessy.core.board as cb
 
 
 @dataclass

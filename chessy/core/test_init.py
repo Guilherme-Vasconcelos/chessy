@@ -1,6 +1,6 @@
 import pytest
 
-import cheese.core as c
+import chessy.core as c
 
 
 @pytest.mark.parametrize(

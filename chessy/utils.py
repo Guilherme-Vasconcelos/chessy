@@ -19,5 +19,5 @@ class UnreachableError(Exception):
 
 def unreachable() -> NoReturn:
     raise UnreachableError(
-        "Unreachable code detected. This should never happen. Please report a bug at https://github.com/Guilherme-Vasconcelos/cheese/issues"
+        "Unreachable code detected. This should never happen. Please report a bug at https://github.com/Guilherme-Vasconcelos/chessy/issues"
     )

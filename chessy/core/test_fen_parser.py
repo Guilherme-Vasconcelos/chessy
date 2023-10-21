@@ -1,8 +1,8 @@
 import pytest
 
-import cheese.core.fen_parser as fp
-from cheese.core import CastlingAvailability, Color, Piece, Square, Type
-from cheese.core.fen_parser import parse
+import chessy.core.fen_parser as fp
+from chessy.core import CastlingAvailability, Color, Piece, Square, Type
+from chessy.core.fen_parser import parse
 
 
 def build_fen(  # noqa: PLR0913

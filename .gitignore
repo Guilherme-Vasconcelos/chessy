@@ -13,4 +13,4 @@ venv/
 .ruff_cache/
 
 # Logs.
-cheese.log*
+chessy.log*

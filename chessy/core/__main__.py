@@ -4,7 +4,7 @@ import logging.config
 from dataclasses import dataclass
 from typing import Literal, NoReturn
 
-import cheese.core.uci
+import chessy.core.uci
 
 
 def setup_logging(
@@ -21,7 +21,7 @@ def setup_logging(
         "handlers": {
             "file": {
                 "class": "logging.handlers.RotatingFileHandler",
-                "filename": "cheese.log",
+                "filename": "chessy.log",
                 "formatter": "detailed",
                 "encoding": "utf-8",
             },
@@ -38,7 +38,7 @@ class CliArgs:
 
 
 def parse_cli_args() -> CliArgs:
-    parser = argparse.ArgumentParser(description="cheese chess engine")
+    parser = argparse.ArgumentParser(description="chessy chess engine")
     parser.add_argument(
         "-d",
         "--debug",
@@ -55,7 +55,7 @@ def main() -> NoReturn:
     log_level: Literal["DEBUG", "INFO"] = "DEBUG" if cli_args.debug else "INFO"
     setup_logging(log_level=log_level)
 
-    engine = cheese.core.uci.Engine()
+    engine = chessy.core.uci.Engine()
     engine.main_loop()
 
 

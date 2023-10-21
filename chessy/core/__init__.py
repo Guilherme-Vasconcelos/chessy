@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from functools import total_ordering
 
-from cheese import utils
+from chessy import utils
 
 
 class Color(Enum):

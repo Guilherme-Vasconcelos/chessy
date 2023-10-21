@@ -5,9 +5,9 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any
 
-import cheese.core as c
-import cheese.core.board as cb
-import cheese.core.movegen as cm
+import chessy.core as c
+import chessy.core.board as cb
+import chessy.core.movegen as cm
 
 
 @dataclass
