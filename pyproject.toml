@@ -2,7 +2,7 @@
 name = "cheese"
 version = "0.1.0"
 description = "A simple chess engine"
-authors = ["Guilherme-Vasconcelos"]
+authors = ["Guilherme Vasconcelos"]
 license = "AGPL-3.0-or-later"
 readme = "README.md"
 
@@ -16,7 +16,7 @@ ruff = "^0.1.0"
 pytest = "^7.4.2"
 
 [tool.poetry.scripts]
-cheese = "cheese.__main__:main"
+cheese = "cheese.core.__main__:main"
 
 [tool.mypy]
 strict = true
@@ -43,7 +43,9 @@ select = [
     "ICN",
     "G",
     "PIE",
+    "T20",
     "SIM",
+    "ARG",
     "PTH",
     "PL",
     "PERF",
@@ -59,8 +61,6 @@ ignore = [
     # so it doesn't matter if the behavior varies between production and development.
     # Furthermore, the -O flag doesn't seem very useful at the moment.
     "S101",
-    # Same reason as above.
-    "B011",
 ]
 
 [tool.ruff.pycodestyle]

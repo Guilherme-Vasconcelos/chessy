@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
-import cheese as c
-import cheese.board as cb
+import cheese.core as c
+import cheese.core.board as cb
+import cheese.utils as ut
 
 
 class FenValidationError(Exception):
@@ -86,7 +87,7 @@ def _parse_piece_placement(v: str) -> list[c.Piece | None]:
             elif char.isnumeric():
                 idx += int(char)
             else:
-                assert False, "unreachable"
+                ut.unreachable()
 
     return piece_placement
 
@@ -103,7 +104,7 @@ def _parse_active_color(v: str) -> c.Color:
         case "b":
             return c.Color.BLACK
         case _:
-            assert False, "unreachable"
+            ut.unreachable()
 
 
 def _parse_castling_availability(v: str) -> c.CastlingAvailability:
@@ -131,7 +132,7 @@ def _parse_castling_availability(v: str) -> c.CastlingAvailability:
             case "q":
                 availability.black_queenside = True
             case _:
-                assert False, "unreachable"
+                ut.unreachable()
 
     return availability
 

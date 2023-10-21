@@ -1,7 +1,7 @@
 import pytest
 
-import cheese as c
-import cheese.board as cb
+import cheese.core as c
+import cheese.core.board as cb
 
 
 def assert_eq_after_move(initial_fen: str, move: c.Move, expected_fen: str) -> None:

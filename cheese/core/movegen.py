@@ -5,8 +5,8 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Literal, TypedDict
 
-import cheese as c
-import cheese.board as cb
+import cheese.core as c
+import cheese.core.board as cb
 
 
 @dataclass
@@ -159,8 +159,7 @@ def _generate_king_attacks(square: c.Square) -> set[c.Square]:
 
 
 def _board_would_be_in_check_after_move(board: cb.Board, move: c.Move) -> bool:
-    # TODO (perf): Create a version of `make_move` that can be rollbacked so we don't have to
-    # deepcopy the board.
+    # TODO (perf): Implement `unmake_last_move` so we don't have to clone the board.
     b2 = deepcopy(board)
     # Validating move requires move generation, and this method is called during move
     # generation. So not bypassing validation would generate an infinite recursion.

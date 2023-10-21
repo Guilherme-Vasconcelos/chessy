@@ -1,8 +1,8 @@
 import pytest
 
-import cheese as c
-import cheese.board as cb
-import cheese.movegen as cm
+import cheese.core as c
+import cheese.core.board as cb
+import cheese.core.movegen as cm
 
 
 def make_empty_board() -> cb.Board:

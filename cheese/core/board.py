@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-import cheese as c
-import cheese.fen_parser as cf
-import cheese.movegen as cm
+import cheese.core as c
+import cheese.core.fen_parser as cf
+import cheese.core.movegen as cm
 
 BOARD_SIZE = 64
 
@@ -71,9 +71,18 @@ class Board:
         # - no pawns on ranks 0 and 7 (they would need to have promoted).
         # - Only at most 1 player can be in check. And if someone is in check,
         #   that someone must be `self.active_color`.
+        # - Castling availability must be seemingly correct in respect to pieces
+        #   positions.
 
     @staticmethod
     def from_fen(fen: str) -> Board:
+        """
+        Create a board from the given FEN.
+
+        Can raise multiple exceptions: `UnreachablePositionError` or any sub-class
+        of `FenValidationError`.
+        """
+
         result = cf.parse(fen)
 
         return Board(
@@ -318,28 +327,32 @@ class Board:
         self._update_board_clocks_after_move(moved_piece, is_capture)
         self.active_color = self.active_color.invert()
 
-    def draw_ascii(self) -> None:
+    def make_ascii_repr(self) -> str:
         """
-        Draw an ASCII representation of the Board, useful for debugging.
+        Create an ASCII representation of the Board, useful for debugging.
         """
 
-        print("Color to play:", self.active_color)
-        print("Castling availability:", self.castling_availability)
-        print("En passant target:", self.en_passant_target)
-        print("Halfmove clock:", self.halfmove_clock)
-        print("Fullmove number:", self.fullmove_number)
-        print("Board:")
+        result = ""
 
-        print("    a  b  c  d  e  f  g  h")
-        print("   -----------------------")
+        result += f"Color to play: {self.active_color}\n"
+        result += f"Castling availability: {self.castling_availability}\n"
+        result += f"En passant target: {self.en_passant_target}\n"
+        result += f"Halfmove clock: {self.halfmove_clock}\n"
+        result += f"Fullmove number: {self.fullmove_number}\n"
+        result += "Board:\n"
+
+        result += "    a  b  c  d  e  f  g  h\n"
+        result += "   -----------------------\n"
 
         for i in range(c.Square.a8.value, c.Square.a1.value - 1, -8):
             friendly_rank = c.Square(i).rank() + 1
-            print(f"{friendly_rank} |", end="")
+            result += f"{friendly_rank} |"
 
             for j in range(8):
                 if (piece := self.get_piece_by_square(c.Square(i + j))) is None:
-                    print(" - ", end="")
+                    result += " - "
                 else:
-                    print(f" {piece.to_letter()} ", end="")
-            print()
+                    result += f" {piece.to_letter()} "
+            result += "\n"
+
+        return result
