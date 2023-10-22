@@ -10,7 +10,7 @@ def thread_exclusive_print(message: str) -> None:
         # some portions of the program. The reason I turned on T20 is because, for the
         # most part, we should be using a thread_exclusive_print, as it ensures lines
         # won't mix up multiple commands simultaneously.
-        print(message)  # noqa: T201
+        print(message, flush=True)  # noqa: T201
 
 
 class UnreachableError(Exception):
