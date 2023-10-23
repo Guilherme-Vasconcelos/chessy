@@ -17,6 +17,7 @@ pytest = "^7.4.2"
 
 [tool.poetry.scripts]
 chessy = "chessy.core.__main__:main"
+prof = "chessy.prof.__main__:main"
 
 [tool.mypy]
 strict = true
@@ -61,6 +62,10 @@ ignore = [
     # so it doesn't matter if the behavior varies between production and development.
     # Furthermore, the -O flag doesn't seem very useful at the moment.
     "S101",
+]
+unfixable = [
+    # Not auto-fixing F841 is better DX.
+    "F841",
 ]
 
 [tool.ruff.pycodestyle]

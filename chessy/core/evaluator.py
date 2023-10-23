@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from copy import deepcopy
-from dataclasses import dataclass, field
 from typing import Any
 
 import chessy.core as c
@@ -10,11 +9,10 @@ import chessy.core.board as cb
 import chessy.core.movegen as cm
 
 
-@dataclass
 class Evaluator:
-    last_best_move: c.Move | None = None
-    last_best_evaluation: float = 0.0
-    last_best_pv: list[c.Move] = field(default_factory=list)
+    last_best_move: c.Move | None
+    last_best_evaluation: float
+    last_best_pv: list[c.Move]
     _stop_search: bool = False
 
     def start_search(

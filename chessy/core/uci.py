@@ -99,7 +99,7 @@ class _Info(_EngineCommand):
 initial_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 
-class Engine:
+class UciEngine:
     _board: cb.Board
     _evaluator: ce.Evaluator
     _engine_thread: Thread | None
@@ -122,12 +122,12 @@ class Engine:
         logger.info("--- Booting UCI engine: starting main loop ---")
 
         while True:
-            command = Engine._read_user_cli_command()
+            command = UciEngine._read_user_cli_command()
             if command is None:
                 logger.warning(
                     "%s failed: a user command was likely ignored. "
                     "Make sure this is intentional. Proceeding.",
-                    Engine._read_user_cli_command.__name__,
+                    UciEngine._read_user_cli_command.__name__,
                 )
                 continue
 
@@ -311,7 +311,7 @@ class Engine:
                         "Got position command without any args - unable to proceed."
                     )
                     return None
-                pos_parse_result = Engine._parse_position_args(
+                pos_parse_result = UciEngine._parse_position_args(
                     position_identifier, rest
                 )
                 if pos_parse_result is None:

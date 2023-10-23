@@ -55,7 +55,7 @@ def main() -> NoReturn:
     log_level: Literal["DEBUG", "INFO"] = "DEBUG" if cli_args.debug else "INFO"
     setup_logging(log_level=log_level)
 
-    engine = chessy.core.uci.Engine()
+    engine = chessy.core.uci.UciEngine()
     engine.main_loop()
 
 
