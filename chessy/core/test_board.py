@@ -8,6 +8,8 @@ def assert_eq_after_move(initial_fen: str, move: c.Move, expected_fen: str) -> N
     initial = cb.Board.from_fen(initial_fen)
     initial.make_move(move)
     final = cb.Board.from_fen(expected_fen)
+    # `_previous_moves` do not matter here, since we are doing a FEN comparison.
+    initial._previous_moves.clear()  # pyright: ignore[reportPrivateUsage]
     assert initial == final
 
 
@@ -153,6 +155,20 @@ def test_promotions(initial_fen: str, move: c.Move, expected_fen: str) -> None:
             c.Move(c.Square.g4, c.Square.h3),
             "rnbqkbnr/pppppp1p/8/8/8/7p/PPPPPPP1/RNBQKBNR w KQkq - 0 2",
         ),
+        (
+            # White double pushed a pawn to be next to its own color. Should NOT
+            # allow en passant.
+            "4k3/8/8/8/3P4/8/4PP2/5K2 w - - 0 1",
+            c.Move(c.Square.e2, c.Square.e4),
+            "4k3/8/8/8/3PP3/8/5P2/5K2 b - - 0 1",
+        ),
+        (
+            # White double pushed a pawn to be next to its own color but also
+            # next to an opposite color. Should allow en passant.
+            "4k3/8/8/8/3P1p2/8/4PP2/5K2 w - - 0 1",
+            c.Move(c.Square.e2, c.Square.e4),
+            "4k3/8/8/8/3PPp2/8/5P2/5K2 b - e3 0 1",
+        ),
     ],
 )
 def test_en_passant(initial_fen: str, move: c.Move, expected_fen: str) -> None:
@@ -187,3 +203,67 @@ def test_illegal_moves(initial_fen: str, move: c.Move) -> None:
     with pytest.raises(cb.IllegalMoveError):
         b = cb.Board.from_fen(initial_fen)
         b.make_move(move)
+
+
+@pytest.mark.parametrize(
+    "initial_fen,moves",
+    [
+        (
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+            [
+                # Simple knight move by white
+                c.Move(c.Square.b1, c.Square.a3),
+                # Simple b pawn push by black
+                c.Move(c.Square.b7, c.Square.b6),
+            ],
+        ),
+        (
+            "rn1qkbnr/pbppp1pp/1p3p2/4P3/8/N7/PPPP1PPP/R1BQKBNR w KQkq - 0 1",
+            [
+                # Pawn capture by white
+                c.Move(c.Square.e5, c.Square.f6),
+                # Pawn capture by black
+                c.Move(c.Square.e7, c.Square.f6),
+            ],
+        ),
+        (
+            "rn1qkbnr/pbpppppp/1p6/4P3/8/N7/PPPP1PPP/R1BQKBNR b KQkq - 0 1",
+            [
+                # Double pawn push by black
+                c.Move(c.Square.f7, c.Square.f5),
+                # En passant by white
+                c.Move(c.Square.e5, c.Square.f6),
+                # Knight capture by black
+                c.Move(c.Square.g8, c.Square.f6),
+            ],
+        ),
+        (
+            "4k2r/R4p2/8/8/8/8/8/4K2R w Kk - 0 1",
+            [
+                # Castling by white
+                c.Move(c.Square.e1, c.Square.g1),
+                # Castling by black
+                c.Move(c.Square.e8, c.Square.g8),
+                # Capture pawn by white
+                c.Move(c.Square.f1, c.Square.f7),
+            ],
+        ),
+        (
+            "rnbqkbnr/pPpppppp/8/8/8/8/PPPPPPpP/RNBQKB1R b KQkq - 0 1",
+            [
+                # Promotion by black
+                c.Move(c.Square.g2, c.Square.g1, promotion=c.Type.ROOK),
+                # Promotion by white with capture
+                c.Move(c.Square.b7, c.Square.a8, promotion=c.Type.KNIGHT),
+            ],
+        ),
+    ],
+)
+def test_move_rollback(initial_fen: str, moves: list[c.Move]) -> None:
+    b = cb.Board.from_fen(initial_fen)
+    for move in moves:
+        b.make_move(move)
+    for _ in moves:
+        b.unmake_move()
+    expected = cb.Board.from_fen(initial_fen)
+    assert b == expected

@@ -122,12 +122,12 @@ class UciEngine:
         logger.info("--- Booting UCI engine: starting main loop ---")
 
         while True:
-            command = UciEngine._read_user_cli_command()
+            command = self._read_user_cli_command()
             if command is None:
                 logger.warning(
                     "%s failed: a user command was likely ignored. "
                     "Make sure this is intentional. Proceeding.",
-                    UciEngine._read_user_cli_command.__name__,
+                    self._read_user_cli_command.__name__,
                 )
                 continue
 
@@ -194,13 +194,17 @@ class UciEngine:
                     pv = self._evaluator.last_best_pv
 
                     self._last_complete_run_best_move = best_move
+                    # TODO: we should invert the report control. Since the UCI interface
+                    # is currently doing the reports, it also has to control stuff about
+                    # the evaluator (e.g. which depth is being searched), which will
+                    # limit us in the future (will be harder to report seldepth etc.).
+                    # Instead, the evaluator should receive a `reporter` object and do
+                    # all the info reporting itself. This will also simplify things here
+                    # since UCI can just say `start_search(max_depth=N)` and done (no
+                    # need to loop from 1 over to max+1 etc.)
                     self._send_engine_command(_Info(evaluated_depth, cp, pv))
 
                 def base_think(inclusive_maxdepth: int) -> None:
-                    # TODO (perf): Is there a way we can reuse previous depths calculations
-                    # to calculate a new one? For example, depth 2 has much more calcs
-                    # than depth 1, however, part of these calcs will already have been
-                    # done since we previously calculated depth 1.
                     for d in range(1, inclusive_maxdepth + 1):
                         if self._stop_search:
                             break
@@ -311,7 +315,7 @@ class UciEngine:
                         "Got position command without any args - unable to proceed."
                     )
                     return None
-                pos_parse_result = UciEngine._parse_position_args(
+                pos_parse_result = _UciArgParser.parse_position_args(
                     position_identifier, rest
                 )
                 if pos_parse_result is None:
@@ -338,19 +342,19 @@ class UciEngine:
                 logger.info("Invalid user UCI command: '%s', ignoring it.", command)
                 return None
 
-    @staticmethod
-    def _parse_position_args(
-        position_identifier: str, rest_args: list[str]
+
+class _UciArgParser:
+    @classmethod
+    def parse_position_args(
+        cls, position_identifier: str, rest_args: list[str]
     ) -> tuple[str, list[c.Move]] | None:
-        result = _UciArgParser.parse_position_args__fen(position_identifier, rest_args)
+        result = cls.parse_position_args__fen(position_identifier, rest_args)
         if result is None:
             return None
         (initial_fen, maybe_move_list) = result
-        moves = _UciArgParser.parse_position_args__movelist(maybe_move_list)
+        moves = cls.parse_position_args__movelist(maybe_move_list)
         return (initial_fen, moves)
 
-
-class _UciArgParser:
     @staticmethod
     def parse_position_args__fen(
         position_identifier: str, fen_or_movelist: list[str]

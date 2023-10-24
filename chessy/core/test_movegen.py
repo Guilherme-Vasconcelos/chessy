@@ -342,6 +342,30 @@ def test_king_attacks(
                 c.Move(c.Square.g6, c.Square.h5),
             },
         ),
+        (
+            "4k3/8/8/8/3PP3/8/5P2/5K2 b - - 0 1",
+            {
+                c.Move(c.Square.e8, c.Square.d8),
+                c.Move(c.Square.e8, c.Square.d7),
+                c.Move(c.Square.e8, c.Square.e7),
+                c.Move(c.Square.e8, c.Square.f8),
+                c.Move(c.Square.e8, c.Square.f7),
+            },
+        ),
+        (
+            "4k3/8/8/8/3PPp2/8/5P2/5K2 b - e3 0 1",
+            {
+                # King moves
+                c.Move(c.Square.e8, c.Square.d8),
+                c.Move(c.Square.e8, c.Square.d7),
+                c.Move(c.Square.e8, c.Square.e7),
+                c.Move(c.Square.e8, c.Square.f8),
+                c.Move(c.Square.e8, c.Square.f7),
+                # Black pawn en passant
+                c.Move(c.Square.f4, c.Square.e3),
+                c.Move(c.Square.f4, c.Square.f3),
+            },
+        ),
     ],
 )
 def test_moves(initial_fen: str, expected_moves: set[c.Move]) -> None:

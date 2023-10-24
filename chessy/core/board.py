@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from copy import copy
+from dataclasses import dataclass, field
 
 import chessy.core as c
 import chessy.core.fen_parser as cf
@@ -26,20 +27,33 @@ class UnreachablePositionError(BoardError):
     pass
 
 
-@dataclass
-class MoveResult:
-    is_capture: bool
+@dataclass(frozen=True)
+class _MoveResult:
     moved_piece: c.Piece
+    maybe_captured_piece: c.Piece | None
+    is_en_passant: bool
+    is_castling: bool
+
+
+@dataclass(frozen=True)
+class _RollbackableMove:
+    move: c.Move
+    move_result: _MoveResult
+    previous_castling_availability: c.CastlingAvailability
+    previous_halfmove_clock: int
+    previous_fullmove_number: int
+    previous_en_passant_target: c.Square | None
 
 
 @dataclass
 class Board:
-    state: list[c.Piece | None]
+    _state: list[c.Piece | None]
     active_color: c.Color
     castling_availability: c.CastlingAvailability
     en_passant_target: c.Square | None
     halfmove_clock: int
     fullmove_number: int
+    _previous_moves: list[_RollbackableMove] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self._validate_current_position()
@@ -50,7 +64,7 @@ class Board:
                 raise UnreachablePositionError(message)
 
         assert_position_cond(
-            (stlen := len(self.state)) == BOARD_SIZE,
+            (stlen := len(self._state)) == BOARD_SIZE,
             f"Board has invalid size {stlen}, expected {BOARD_SIZE}",
         )
 
@@ -95,14 +109,14 @@ class Board:
         )
 
     def get_piece_by_square(self, square: c.Square) -> c.Piece | None:
-        return self.state[square.value]
+        return self._state[square.value]
 
     def _set_piece_by_square(self, square: c.Square, piece: c.Piece | None) -> None:
-        self.state[square.value] = piece
+        self._state[square.value] = piece
 
     def _get_king_position_by_color(self, color: c.Color) -> c.Square:
         king_position: c.Square | None = None
-        for i, p in enumerate(self.state):
+        for i, p in enumerate(self._state):
             if p is not None and p.ptype == c.Type.KING and p.color == color:
                 king_position = c.Square(i)
                 break
@@ -125,7 +139,7 @@ class Board:
         ) | cm.generate_attacks(self, king_position, c.Piece(c.Type.KNIGHT, color))
         for position in possible_attackers_positions:
             if (
-                (attacker := self.state[position.value]) is not None
+                (attacker := self._state[position.value]) is not None
                 and attacker.color == color.invert()
                 # TODO (perf): We don't need to generate every single attack, but rather
                 # just the ones that are likely to attack `king_position`.
@@ -220,21 +234,27 @@ class Board:
         )
         self._set_piece_by_square(previous_rook_position, None)
 
-    def _make_move__state_target_update_by_en_passant(self, move: c.Move) -> None:
+    def _make_move__state_target_update_by_en_passant(self, move: c.Move) -> c.Piece:
+        """
+        Return whatever piece was captured when performing the en passant.
+        """
+
         source_piece = self.get_piece_by_square(move.source)
         assert self.en_passant_target is not None
         assert source_piece is not None
 
         direction_factor = -1 * source_piece.direction_factor()
         single_step = 8 * direction_factor
+        captured_square = c.Square(self.en_passant_target.value + single_step)
+        captured_piece = self.get_piece_by_square(captured_square)
+        assert captured_piece is not None
 
         self._set_piece_by_square(move.target, source_piece)
-        self._set_piece_by_square(
-            c.Square(self.en_passant_target.value + single_step), None
-        )
+        self._set_piece_by_square(captured_square, None)
+        return captured_piece
 
-    def _make_move__state_update(self, move: c.Move) -> MoveResult:
-        is_capture = self.get_piece_by_square(move.target) is not None
+    def _make_move__state_update(self, move: c.Move) -> _MoveResult:
+        captured_piece = self.get_piece_by_square(move.target)
         source_piece = self.get_piece_by_square(move.source)
         assert source_piece is not None
 
@@ -247,14 +267,13 @@ class Board:
         elif is_castling:
             self._make_move__state_target_and_rook_update_by_castling(move)
         elif is_en_passant:
-            is_capture = True
-            self._make_move__state_target_update_by_en_passant(move)
+            captured_piece = self._make_move__state_target_update_by_en_passant(move)
         else:
             self._set_piece_by_square(move.target, source_piece)
 
         self._set_piece_by_square(move.source, None)
 
-        return MoveResult(is_capture, source_piece)
+        return _MoveResult(source_piece, captured_piece, is_en_passant, is_castling)
 
     def _update_castling_availability_after_move(
         self, moved_piece: c.Piece, move_source: c.Square
@@ -289,7 +308,11 @@ class Board:
                 neighbor = self.get_piece_by_square(
                     c.Square(performed_move.target.value + offset)
                 )
-                if neighbor and neighbor.ptype == c.Type.PAWN:
+                if (
+                    neighbor
+                    and neighbor.ptype == c.Type.PAWN
+                    and neighbor.color == moved_piece.color.invert()
+                ):
                     self.en_passant_target = en_passant_square
                     return
 
@@ -319,12 +342,93 @@ class Board:
             self._validate_move(move)
 
         move_result = self._make_move__state_update(move)
-        is_capture = move_result.is_capture
         moved_piece = move_result.moved_piece
+        is_capture = move_result.maybe_captured_piece is not None
+        self._previous_moves.append(
+            _RollbackableMove(
+                move,
+                move_result,
+                copy(self.castling_availability),
+                self.halfmove_clock,
+                self.fullmove_number,
+                self.en_passant_target,
+            )
+        )
 
         self._update_castling_availability_after_move(moved_piece, move.source)
         self._update_en_passant_target_after_move(moved_piece, move)
         self._update_board_clocks_after_move(moved_piece, is_capture)
+        self.active_color = self.active_color.invert()
+
+    def _unmake_move__state_source_update(
+        self, rollbackable_move: _RollbackableMove
+    ) -> None:
+        move = rollbackable_move.move
+        moved_piece = rollbackable_move.move_result.moved_piece
+
+        # This works even for promotions because `moved_piece` points to the older
+        # piece (the pawn), not the promoted piece that was created later.
+        self._set_piece_by_square(move.source, moved_piece)
+        if rollbackable_move.move_result.is_castling:
+            rook_position_by_king_position = {
+                c.Square.g1: {"old": c.Square.f1, "new": c.Square.h1},
+                c.Square.c1: {"old": c.Square.d1, "new": c.Square.a1},
+                c.Square.g8: {"old": c.Square.f8, "new": c.Square.h8},
+                c.Square.c8: {"old": c.Square.d8, "new": c.Square.a8},
+            }
+            old = self.get_piece_by_square(
+                rook_position_by_king_position[move.target]["old"]
+            )
+            assert old is not None and old.ptype == c.Type.ROOK
+            self._set_piece_by_square(
+                rook_position_by_king_position[move.target]["old"], None
+            )
+            self._set_piece_by_square(
+                rook_position_by_king_position[move.target]["new"], old
+            )
+
+    def _unmake_move__state_target_update(
+        self, rollbackable_move: _RollbackableMove
+    ) -> None:
+        move = rollbackable_move.move
+        moved_piece = rollbackable_move.move_result.moved_piece
+
+        if rollbackable_move.move_result.is_en_passant:
+            assert rollbackable_move.previous_en_passant_target is not None
+            assert moved_piece.ptype == c.Type.PAWN
+            true_target = c.Square(
+                (-8 * moved_piece.direction_factor()) + move.target.value
+            )
+            self._set_piece_by_square(
+                true_target,
+                rollbackable_move.move_result.maybe_captured_piece,
+            )
+            self._set_piece_by_square(move.target, None)
+        else:
+            self._set_piece_by_square(
+                move.target,
+                rollbackable_move.move_result.maybe_captured_piece,
+            )
+
+    def unmake_move(self) -> None:
+        """
+        Unmake the last move. This can be called multiple times, each time undoing
+        whatever was the most recent move. However, ValueError is raised if there are
+        no more moves to unmake (e.g. at the beginning of the game).
+        """
+
+        try:
+            move_to_unmake = self._previous_moves.pop()
+        except IndexError:
+            raise ValueError("No moves to unmake.") from None
+
+        self._unmake_move__state_source_update(move_to_unmake)
+        self._unmake_move__state_target_update(move_to_unmake)
+
+        self.castling_availability = move_to_unmake.previous_castling_availability
+        self.halfmove_clock = move_to_unmake.previous_halfmove_clock
+        self.en_passant_target = move_to_unmake.previous_en_passant_target
+        self.fullmove_number = move_to_unmake.previous_fullmove_number
         self.active_color = self.active_color.invert()
 
     def make_ascii_repr(self) -> str:
@@ -332,9 +436,7 @@ class Board:
         Create an ASCII representation of the Board, useful for debugging.
         """
 
-        result = ""
-
-        result += f"Color to play: {self.active_color}\n"
+        result = f"Color to play: {self.active_color}\n"
         result += f"Castling availability: {self.castling_availability}\n"
         result += f"En passant target: {self.en_passant_target}\n"
         result += f"Halfmove clock: {self.halfmove_clock}\n"

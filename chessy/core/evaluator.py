@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from copy import deepcopy
 from typing import Any
 
 import chessy.core as c
@@ -34,11 +33,10 @@ class Evaluator:
             if self._stop_search:
                 return
 
-            # TODO (perf): Make a `Board.unmake_last_move` so we don't have to deepcopy board.
-            new_board = deepcopy(board)
-            new_board.make_move(move)
+            board.make_move(move)
             new_pv: list[c.Move] = []
-            move_value = self._minimax(new_board, depth - 1, not maximizing, new_pv)
+            move_value = self._minimax(board, depth - 1, not maximizing, new_pv)
+            board.unmake_move()
 
             if (maximizing and move_value > best_value) or (
                 not maximizing and move_value < best_value
@@ -70,7 +68,7 @@ class Evaluator:
 
         if depth == 0:
             # TODO: quiescence search instead of evaluating right away.
-            return Evaluator._evaluate_score(board)
+            return self._evaluate_score(board)
 
         local_best_pv: list[c.Move] = []
         previous_evaluation = float("-inf") if maximizing else float("inf")
@@ -79,11 +77,10 @@ class Evaluator:
             if self._stop_search:
                 return self.last_best_evaluation
 
-            # TODO (perf): Make a `Board.unmake_last_move` so we don't have to deepcopy board.
-            new_board = deepcopy(board)
-            new_board.make_move(move)
+            board.make_move(move)
             new_pv: list[c.Move] = []
-            evaluation = self._minimax(new_board, depth - 1, not maximizing, new_pv)
+            evaluation = self._minimax(board, depth - 1, not maximizing, new_pv)
+            board.unmake_move()
 
             if (maximizing and evaluation > previous_evaluation) or (
                 not maximizing and evaluation < previous_evaluation
@@ -125,12 +122,12 @@ class Evaluator:
 
         return piece_counts
 
-    @staticmethod
-    def _evaluate_score(board: cb.Board) -> float:
+    @classmethod
+    def _evaluate_score(cls, board: cb.Board) -> float:
         # TODO: Enhance evaluation for openings and endgames.
 
-        white_mobility, black_mobility = Evaluator._calculate_mobility(board)
-        piece_counts = Evaluator._calculate_piece_counts(board)
+        white_mobility, black_mobility = cls._calculate_mobility(board)
+        piece_counts = cls._calculate_piece_counts(board)
 
         weight = {
             c.Type.KING: 200,

@@ -21,8 +21,7 @@ feel free to contribute if you wish to.
 ### Short term:
 
 - Improve move evaluation and search.
-    - Be able to process at least depth 10 within a reasonable time.
-        - Right now, with my Ryzen 5 machine, it takes about ~10 seconds to process depth 2, and ~2 minutes to process depth 3. The goal is to be able to process depth 10 in around 10-15 seconds.
+    - Be able to process at least depth 8 within a reasonable time.
     - Quiescence search (as soon as we get some performance improvements - not right now because it will slow down things too much).
 
 ### Long term:
@@ -30,6 +29,7 @@ feel free to contribute if you wish to.
 - Advanced UCI support
     - Adapt playstyle according to `wtime` and `btime`.
     - Ponder.
+    - Report more info (e.g. `seldepth`).
     - Maybe support customization options.
 
 ## Development utils

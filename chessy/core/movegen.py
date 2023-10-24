@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import Literal, TypedDict
 
@@ -159,15 +158,15 @@ def _generate_king_attacks(square: c.Square) -> set[c.Square]:
 
 
 def _board_would_be_in_check_after_move(board: cb.Board, move: c.Move) -> bool:
-    # TODO (perf): Implement `unmake_last_move` so we don't have to clone the board.
-    b2 = deepcopy(board)
+    color = board.active_color
     # Validating move requires move generation, and this method is called during move
     # generation. So not bypassing validation would generate an infinite recursion.
     # But this is not a problem since the move generator only generates pseudolegal
     # moves.
-    color = board.active_color
-    b2.make_move(move, bypass_validation=True)
-    return b2.is_in_check(color)
+    board.make_move(move, bypass_validation=True)
+    result = board.is_in_check(color)
+    board.unmake_move()
+    return result
 
 
 def generate_attacks(
@@ -271,31 +270,30 @@ def _generate_castling_moves(board: cb.Board, color: c.Color) -> set[c.Move]:
             for s in castling_paths[castling_path]["path"]
         )
 
-    ca = board.castling_availability
     if color == c.Color.WHITE:
         if (
-            ca.white_kingside
+            board.castling_availability.white_kingside
             and path_is_clear("K")
             and path_has_no_intermediate_checks("K")
         ):
             result.add(c.Move(c.Square.e1, c.Square.g1))
 
         if (
-            ca.white_queenside
+            board.castling_availability.white_queenside
             and path_is_clear("Q")
             and path_has_no_intermediate_checks("Q")
         ):
             result.add(c.Move(c.Square.e1, c.Square.c1))
     else:
         if (
-            ca.black_kingside
+            board.castling_availability.black_kingside
             and path_is_clear("k")
             and path_has_no_intermediate_checks("k")
         ):
             result.add(c.Move(c.Square.e8, c.Square.g8))
 
         if (
-            ca.black_queenside
+            board.castling_availability.black_queenside
             and path_is_clear("q")
             and path_has_no_intermediate_checks("q")
         ):
