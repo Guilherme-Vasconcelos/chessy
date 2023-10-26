@@ -94,8 +94,14 @@ class Evaluator:
     @staticmethod
     def _calculate_mobility(board: cb.Board) -> tuple[int, int]:
         current_side_legal_moves = cm.generate_all_legal_moves(board)
+        # We must reset en passant target, otherwise the board can count the en passant
+        # as a possible move for the other side.
+        prev_en_passant_tg = board.en_passant_target
         board.active_color = board.active_color.invert()
+        board.en_passant_target = None
+
         other_side_legal_moves = cm.generate_all_legal_moves(board)
+        board.en_passant_target = prev_en_passant_tg
         board.active_color = board.active_color.invert()
 
         if board.active_color == c.Color.WHITE:

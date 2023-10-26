@@ -57,14 +57,14 @@ line-length = 88
 # Same as poetry.
 target-version = "py311"
 ignore = [
-    # Tests aside, I use asserts only for specifying preconditions or states that are known to be true.
-    # If these preconditions aren't met, it's a bug. Relying on buggy behavior is non-specified behavior,
+    # Tests aside, I use asserts only for declaring states that are known to be true (preconditions, postconditions
+    # and invariants). If these states aren't met, it's a bug. Relying on buggy behavior is non-specified behavior,
     # so it doesn't matter if the behavior varies between production and development.
-    # Furthermore, the -O flag doesn't seem very useful at the moment.
     "S101",
 ]
 unfixable = [
-    # Not auto-fixing F841 is better DX.
+    # Better DX: these fixes usually delete WIP code.
+    "F401",
     "F841",
 ]
 
