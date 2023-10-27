@@ -44,7 +44,7 @@ def main() -> None:
     evaluator = ce.Evaluator()
 
     def calc(depth: int) -> None:
-        evaluator.start_search(board, depth=depth)
+        evaluator.start_search(board, max_depth=depth)
 
     p = Profile()
     p.runcall(calc, depth)

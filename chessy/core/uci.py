@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import sys
 from dataclasses import dataclass
@@ -99,24 +101,36 @@ class _Info(_EngineCommand):
 initial_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 
+@dataclass(frozen=True)
+class UciEvaluationInfoReporter(ce.EvaluationInfoReporter):
+    _uci_engine: UciEngine
+
+    def report_info(
+        self,
+        *,
+        depth: int,
+        best_evaluation: float,
+        pv: list[c.Move],
+    ) -> None:
+        cp = int(best_evaluation * 100)
+        self._uci_engine._send_engine_command(  # pyright: ignore[reportPrivateUsage]
+            _Info(depth, cp, pv)
+        )
+
+
 class UciEngine:
     _board: cb.Board
     _evaluator: ce.Evaluator
     _engine_thread: Thread | None
-    _last_complete_run_best_move: c.Move | None
-    _stop_search: bool
 
     def __init__(self) -> None:
         self._board = cb.Board.from_fen(initial_position_fen)
-        self._evaluator = ce.Evaluator()
+        info_reporter = UciEvaluationInfoReporter(self)
+        self._evaluator = ce.Evaluator(info_reporter)
         self._engine_thread = None
-        self._last_complete_run_best_move = None
-        self._stop_search = False
 
     def _reset_engine_params(self) -> None:
         self._engine_thread = None
-        self._last_complete_run_best_move = None
-        self._stop_search = False
 
     def main_loop(self) -> NoReturn:
         logger.info("--- Booting UCI engine: starting main loop ---")
@@ -133,7 +147,7 @@ class UciEngine:
 
             self._handle_user_command(command)
 
-    def _handle_user_command(self, command: _UserCommand) -> None:  # noqa: PLR0915
+    def _handle_user_command(self, command: _UserCommand) -> None:
         match command:
             case _Uci():
                 self._send_engine_command(
@@ -181,53 +195,28 @@ class UciEngine:
                     self._board.make_ascii_repr(),
                 )
 
-            case _Go(mode, upperbound_depth):
+            case _Go(mode, depth):
                 if self._engine_thread is not None and self._engine_thread.is_alive():
                     logger.info(
                         "Unable to start new go command - thread is already busy"
                     )
                     return
 
-                def update_last_best_move(evaluated_depth: int) -> None:
-                    best_move = self._evaluator.last_best_move
-                    cp = int(self._evaluator.last_best_evaluation * 100)
-                    pv = self._evaluator.last_best_pv
-
-                    self._last_complete_run_best_move = best_move
-                    # TODO: we should invert the report control. Since the UCI interface
-                    # is currently doing the reports, it also has to control stuff about
-                    # the evaluator (e.g. which depth is being searched), which will
-                    # limit us in the future (will be harder to report seldepth etc.).
-                    # Instead, the evaluator should receive a `reporter` object and do
-                    # all the info reporting itself. This will also simplify things here
-                    # since UCI can just say `start_search(max_depth=N)` and done (no
-                    # need to loop from 1 over to max+1 etc.)
-                    self._send_engine_command(_Info(evaluated_depth, cp, pv))
-
-                def base_think(inclusive_maxdepth: int) -> None:
-                    for d in range(1, inclusive_maxdepth + 1):
-                        if self._stop_search:
-                            break
-
-                        logger.info("Starting calc for depth %d", d)
-                        self._evaluator.start_search(
-                            self._board,
-                            depth=d,
-                            on_search_completed=lambda: update_last_best_move(
-                                d  # noqa: B023 (false positive, see other comments)
-                            ),
-                        )
-                    if self._last_complete_run_best_move is None:
-                        logger.warning(
-                            "Evaluator did not have enough time to calc a move"
-                        )
+                def base_think(depth: int) -> None:
+                    bestmove = self._evaluator.start_search(
+                        self._board, max_depth=depth
+                    )
+                    logger.info(
+                        "Search of depth %d returned - reporting bestmove %s",
+                        depth,
+                        bestmove,
+                    )
+                    if bestmove is not None:
+                        self._send_engine_command(_BestMove(bestmove))
                     else:
-                        logger.info(
-                            "Either calculation completed, or search was "
-                            "aborted. Reporting last best move."
-                        )
-                        self._send_engine_command(
-                            _BestMove(self._last_complete_run_best_move)
+                        logger.warning(
+                            "Evaluator did not find any best moves - either game ended"
+                            ", or search was aborted too soon"
                         )
                     self._reset_engine_params()
 
@@ -239,20 +228,22 @@ class UciEngine:
                             base_think(99)
 
                     case _GoMode.BY_DEPTH:
-                        if upperbound_depth < 1:
+                        if depth < 1:
                             logger.error(
                                 "A depth of %d was sent for a depth-based go",
-                                upperbound_depth,
+                                depth,
                             )
                             return None
+                        logger.info("Starting calc with depth %d", depth)
 
                         def think() -> None:
-                            base_think(upperbound_depth)
+                            base_think(depth)
 
                 self._engine_thread = Thread(target=think)
                 self._engine_thread.start()
 
             case _Stop():
+                logger.info("Stopping search due to user request")
                 self._evaluator.stop_search()
                 self._stop_search = True
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from abc import ABC, abstractmethod
 from typing import Any
 
 import chessy.core as c
@@ -8,30 +8,76 @@ import chessy.core.board as cb
 import chessy.core.movegen as cm
 
 
+class EvaluationInfoReporter(ABC):
+    @abstractmethod
+    def report_info(
+        self, *, depth: int, best_evaluation: float, pv: list[c.Move]
+    ) -> None:
+        raise NotImplementedError
+
+
+class _NilInfoReporter(EvaluationInfoReporter):
+    def report_info(
+        self,
+        *,
+        depth: int,
+        best_evaluation: float,
+        pv: list[c.Move],
+    ) -> None:
+        pass
+
+
 class Evaluator:
-    last_best_move: c.Move | None
-    last_best_evaluation: float
-    last_best_pv: list[c.Move]
     _stop_search: bool = False
+    _info_reporter: EvaluationInfoReporter
+
+    def __init__(self, info_reporter: EvaluationInfoReporter | None = None) -> None:
+        """
+        If instantiated without an `info_reporter`, all infos are suppressed.
+        """
+
+        if info_reporter is None:
+            self._info_reporter = _NilInfoReporter()
+        else:
+            self._info_reporter = info_reporter
+        self._reset_search_params()
 
     def start_search(
         self,
         board: cb.Board,
         *,
-        depth: int,
-        on_search_completed: Callable[[], None] | None = None,
-    ) -> None:
-        self.reset_search_results()
+        max_depth: int,
+    ) -> c.Move | None:
+        self._reset_search_params()
 
-        if depth < 1:
+        if max_depth < 1:
             raise ValueError("The minimum allowed depth is 1")
 
+        subdepth_bestmove: c.Move | None = None
+        for subdepth in range(1, max_depth + 1):
+            if self._stop_search:
+                break
+
+            if (result := self._perform_search(board, subdepth)) is not None:
+                pv, evaluation = result
+                assert len(pv) >= 1
+                subdepth_bestmove = pv[0]
+                self._info_reporter.report_info(
+                    depth=subdepth, best_evaluation=evaluation, pv=pv
+                )
+
+        return subdepth_bestmove
+
+    def _perform_search(
+        self, board: cb.Board, depth: int
+    ) -> tuple[list[c.Move], float] | None:
         maximizing = board.active_color == c.Color.WHITE
         best_value = float("-inf") if maximizing else float("inf")
+        pv: list[c.Move] = []
 
         for move in cm.generate_all_legal_moves(board):
             if self._stop_search:
-                return
+                return None
 
             board.make_move(move)
             new_pv: list[c.Move] = []
@@ -42,40 +88,34 @@ class Evaluator:
                 not maximizing and move_value < best_value
             ):
                 best_value = move_value
-                self.last_best_move = move
-                self.last_best_evaluation = best_value
-                self.last_best_pv = [move, *new_pv]
+                pv = [move, *new_pv]
 
-        if on_search_completed is not None:
-            on_search_completed()
+        return pv, best_value
 
     def stop_search(self) -> None:
         self._stop_search = True
 
-    def reset_search_results(self) -> None:
+    def _reset_search_params(self) -> None:
         self._stop_search = False
-        self.last_best_move = None
-        self.last_best_evaluation = 0.0
-        self.last_best_pv = []
 
     def _minimax(
         self, board: cb.Board, depth: int, maximizing: bool, current_pv: list[c.Move]
     ) -> float:
         assert depth >= 0
 
+        local_best_pv: list[c.Move] = []
+        previous_evaluation = float("-inf") if maximizing else float("inf")
+
         if self._stop_search:
-            return self.last_best_evaluation
+            return previous_evaluation
 
         if depth == 0:
             # TODO: quiescence search instead of evaluating right away.
             return self._evaluate_score(board)
 
-        local_best_pv: list[c.Move] = []
-        previous_evaluation = float("-inf") if maximizing else float("inf")
-
         for move in cm.generate_all_legal_moves(board):
             if self._stop_search:
-                return self.last_best_evaluation
+                return previous_evaluation
 
             board.make_move(move)
             new_pv: list[c.Move] = []
