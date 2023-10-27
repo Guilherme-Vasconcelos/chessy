@@ -37,7 +37,7 @@ class FenInvalidFullmoveNumberError(FenValidationError):
     pass
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class FenParseResult:
     piece_placement: list[c.Piece | None]
     active_color: c.Color

@@ -27,7 +27,7 @@ class UnreachablePositionError(BoardError):
     pass
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class _MoveResult:
     moved_piece: c.Piece
     maybe_captured_piece: c.Piece | None
@@ -35,7 +35,7 @@ class _MoveResult:
     is_castling: bool
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class _RollbackableMove:
     move: c.Move
     move_result: _MoveResult
@@ -45,7 +45,7 @@ class _RollbackableMove:
     previous_en_passant_target: c.Square | None
 
 
-@dataclass
+@dataclass(slots=True)
 class Board:
     _state: list[c.Piece | None]
     active_color: c.Color

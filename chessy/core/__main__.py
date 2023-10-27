@@ -32,7 +32,7 @@ def setup_logging(
     logging.config.dictConfig(logging_config)
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CliArgs:
     debug: bool
 

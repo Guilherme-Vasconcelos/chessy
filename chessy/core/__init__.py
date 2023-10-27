@@ -28,7 +28,7 @@ class Type(Enum):
     KING = auto()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Piece:
     ptype: Type
     color: Color
@@ -188,7 +188,7 @@ class Square(Enum):
         return self.value < other.value
 
 
-@dataclass
+@dataclass(slots=True)
 class CastlingAvailability:
     white_kingside: bool
     white_queenside: bool
@@ -214,7 +214,7 @@ class CastlingAvailability:
             self.black_kingside = False
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Move:
     source: Square
     target: Square

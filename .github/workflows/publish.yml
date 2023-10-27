@@ -1,0 +1,18 @@
+name: Publish
+
+on:
+  push:
+    tags: [ "v*.*.*" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build and publish to pypi
+      uses: JRubics/poetry-publish@b71e946be561eaf8bfb7562ecc97c26fb8583070
+      with:
+        python_version: '3.11'
+        pypi_token: ${{ secrets.PYPI_TOKEN }}

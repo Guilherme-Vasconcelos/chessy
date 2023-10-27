@@ -8,7 +8,7 @@ import chessy.core as c
 import chessy.core.board as cb
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class _DirectionalAdd:
     shift: int
     prevented_files: Iterable[int] | None

@@ -101,7 +101,7 @@ class _Info(_EngineCommand):
 _initial_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class _UciEvaluationInfoReporter(ce.EvaluationInfoReporter):
     _uci_engine: UciEngine
 
@@ -112,7 +112,12 @@ class _UciEvaluationInfoReporter(ce.EvaluationInfoReporter):
         best_evaluation: float,
         pv: list[c.Move],
     ) -> None:
-        cp = int(best_evaluation * 100)
+        if best_evaluation == float("-inf"):
+            cp = -100
+        elif best_evaluation == float("inf"):
+            cp = 100
+        else:
+            cp = int(best_evaluation * 100)
         self._uci_engine._send_engine_command(  # pyright: ignore[reportPrivateUsage]
             _Info(depth, cp, pv)
         )
@@ -253,7 +258,8 @@ class UciEngine:
             case _:
                 ut.unreachable()
 
-    def _send_engine_command(self, command: _EngineCommand) -> None:
+    @staticmethod
+    def _send_engine_command(command: _EngineCommand) -> None:
         match command:
             # Without making thread-exclusive print calls, we could end up mixing
             # commands in the same line. So do not use bare `print` here.

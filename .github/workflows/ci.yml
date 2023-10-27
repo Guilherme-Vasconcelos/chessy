@@ -1,4 +1,4 @@
-name: All quality checks
+name: CI
 
 on:
   push:
@@ -21,6 +21,11 @@ jobs:
       with:
         python-version: '3.11'
         cache: 'poetry'
+
+    - name: Validate project metadata
+      run: |
+        poetry check
+        poetry check --lock
 
     - name: Install dependencies
       run: poetry install

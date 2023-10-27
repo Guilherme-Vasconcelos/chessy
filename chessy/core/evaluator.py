@@ -18,11 +18,7 @@ class EvaluationInfoReporter(ABC):
 
 class _NilInfoReporter(EvaluationInfoReporter):
     def report_info(
-        self,
-        *,
-        depth: int,
-        best_evaluation: float,
-        pv: list[c.Move],
+        self, *, depth: int, best_evaluation: float, pv: list[c.Move]
     ) -> None:
         pass
 
@@ -164,16 +160,27 @@ class Evaluator:
             if (piece := board.get_piece_by_square(square)) is not None:
                 piece_counts[piece.color][piece.ptype] += 1
 
-                # TODO: Account for doubled / blocked / isolated pawns.
-
         return piece_counts
 
     @classmethod
     def _evaluate_score(cls, board: cb.Board) -> float:
         # TODO: Enhance evaluation for openings and endgames.
+        # TODO: Account for doubled / blocked / isolated pawns.
 
         white_mobility, black_mobility = cls._calculate_mobility(board)
         piece_counts = cls._calculate_piece_counts(board)
+
+        if (
+            board.active_color == c.Color.WHITE
+            and white_mobility == 0
+            and piece_counts[c.Color.WHITE][c.Type.KING] == 1
+        ) or (
+            board.active_color == c.Color.BLACK
+            and black_mobility == 0
+            and piece_counts[c.Color.BLACK][c.Type.KING] == 1
+        ):
+            # Stalemate
+            return 0
 
         weight = {
             c.Type.KING: 200,

@@ -6,7 +6,7 @@ import chessy.core.board as cb
 import chessy.core.evaluator as ce
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CliArgs:
     fen: str
     depth: int

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "chessy"
-version = "0.2.0"
+version = "0.2.1"
 description = "A simple chess engine"
 authors = ["Guilherme Vasconcelos"]
 license = "AGPL-3.0-or-later"
@@ -50,7 +50,7 @@ select = [
     "PTH",
     "PL",
     "PERF",
-    "RUF"
+    "RUF",
 ]
 # Same as black.
 line-length = 88
