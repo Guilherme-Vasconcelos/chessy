@@ -9,6 +9,7 @@ from typing import NoReturn
 
 import chessy
 import chessy.core as c
+import chessy.core.atkgen as ca
 import chessy.core.board as cb
 import chessy.core.evaluator as ce
 import chessy.core.fen_parser as fp
@@ -164,6 +165,9 @@ class UciEngine:
                 self._send_engine_command(_UciOk())
 
             case _IsReady():
+                logger.info("Attempting to initialize attack tables")
+                ca.force_init_all_tables()
+                logger.info("Initialization done. Sending readyok..")
                 self._send_engine_command(_ReadyOk())
 
             case _UciNewGame():
@@ -250,9 +254,9 @@ class UciEngine:
             case _Stop():
                 logger.info("Stopping search due to user request")
                 self._evaluator.stop_search()
-                self._stop_search = True
 
             case _Quit():
+                self._evaluator.stop_search()
                 sys.exit(0)
 
             case _:

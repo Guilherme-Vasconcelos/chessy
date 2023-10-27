@@ -5,6 +5,7 @@ from copy import copy
 from dataclasses import dataclass, field
 
 import chessy.core as c
+import chessy.core.atkgen as ca
 import chessy.core.fen_parser as cf
 import chessy.core.movegen as cm
 
@@ -134,16 +135,16 @@ class Board:
             color = self.active_color
 
         king_position = self._get_king_position_by_color(color)
-        possible_attackers_positions = cm.generate_attacks(
+        possible_attackers_positions = ca.generate_attacks(
             self, king_position, c.Piece(c.Type.QUEEN, color)
-        ) | cm.generate_attacks(self, king_position, c.Piece(c.Type.KNIGHT, color))
+        ) | ca.generate_attacks(self, king_position, c.Piece(c.Type.KNIGHT, color))
         for position in possible_attackers_positions:
             if (
                 (attacker := self._state[position.value]) is not None
                 and attacker.color == color.invert()
                 # TODO (perf): We don't need to generate every single attack, but rather
                 # just the ones that are likely to attack `king_position`.
-                and king_position in cm.generate_attacks(self, position, attacker)
+                and king_position in ca.generate_attacks(self, position, attacker)
             ):
                 return True
 

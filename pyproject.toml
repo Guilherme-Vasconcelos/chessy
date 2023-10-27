@@ -1,10 +1,16 @@
 [tool.poetry]
 name = "chessy"
-version = "0.2.2"
+version = "0.2.3"
 description = "A simple chess engine"
 authors = ["Guilherme Vasconcelos"]
 license = "AGPL-3.0-or-later"
 readme = "README.md"
+repository = "https://github.com/Guilherme-Vasconcelos/chessy"
+keywords = ["chess"]
+classifiers = [
+    "Environment :: Console",
+    "Topic :: Games/Entertainment :: Board Games"
+]
 include = [
     "LICENSE.txt",
     "pyproject.toml"

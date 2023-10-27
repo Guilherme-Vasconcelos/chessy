@@ -2,6 +2,7 @@ import argparse
 from cProfile import Profile
 from dataclasses import dataclass
 
+import chessy.core.atkgen as ca
 import chessy.core.board as cb
 import chessy.core.evaluator as ce
 
@@ -39,7 +40,9 @@ def main() -> None:
     depth = args.depth
     output = args.output
 
-    # Create engine outside `calc` so startup time isn't considered by the profiler.
+    # Create engine and its params outside `calc` so startup time isn't considered by
+    # the profiler.
+    ca.force_init_all_tables()
     board = cb.Board.from_fen(fen)
     evaluator = ce.Evaluator()
 

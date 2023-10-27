@@ -181,8 +181,15 @@ class Square(Enum):
 
     @classmethod
     def last_file(cls) -> int:
-        # Anything on the h file works.
         return cls.h7.file()
+
+    @classmethod
+    def first_rank(cls) -> int:
+        return cls.h1.rank()
+
+    @classmethod
+    def last_rank(cls) -> int:
+        return cls.h8.rank()
 
     def __lt__(self, other: Square) -> bool:
         return self.value < other.value
@@ -224,7 +231,7 @@ class Move:
         if self.promotion is not None:
             target_rank = self.target.rank()
 
-            assert target_rank in {0, 7}
+            assert target_rank in {Square.first_rank(), Square.last_rank()}
             assert self.promotion not in {Type.KING, Type.PAWN}
 
     @staticmethod
