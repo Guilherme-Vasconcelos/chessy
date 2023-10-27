@@ -1,10 +1,14 @@
 [tool.poetry]
 name = "chessy"
-version = "0.2.1"
+version = "0.2.2"
 description = "A simple chess engine"
 authors = ["Guilherme Vasconcelos"]
 license = "AGPL-3.0-or-later"
 readme = "README.md"
+include = [
+    "LICENSE.txt",
+    "pyproject.toml"
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"
