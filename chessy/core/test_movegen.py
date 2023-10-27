@@ -372,3 +372,23 @@ def test_moves(initial_fen: str, expected_moves: set[c.Move]) -> None:
     b = cb.Board.from_fen(initial_fen)
     moves = cm.generate_all_legal_moves(b)
     assert moves == expected_moves
+
+
+@pytest.mark.parametrize(
+    "initial_fen",
+    [
+        # Castling blocked
+        "rn2k3/p7/3B4/2K1P3/8/8/8/8 b q - 0 9",
+        # King in check
+        "rn2k3/p7/2B5/2K1P3/8/8/8/8 b q - 0 9",
+        # Castling path in check
+        "rn2k3/p7/4B3/2K1P3/8/8/8/8 b q - 0 9",
+    ],
+)
+def test_impossible_castling_positions(initial_fen: str) -> None:
+    b = cb.Board.from_fen(initial_fen)
+    moves = cm.generate_all_legal_moves(b)
+    assert c.Move(c.Square.e1, c.Square.g1) not in moves
+    assert c.Move(c.Square.e1, c.Square.c1) not in moves
+    assert c.Move(c.Square.e8, c.Square.g8) not in moves
+    assert c.Move(c.Square.e8, c.Square.c8) not in moves

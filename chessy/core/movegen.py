@@ -239,7 +239,8 @@ def _generate_castling_moves(board: cb.Board, color: c.Color) -> set[c.Move]:
 
     class CastlingPath(TypedDict):
         start: c.Square
-        path: list[c.Square]
+        king_path: list[c.Square]
+        full_path: list[c.Square]
 
     class CastlingPaths(TypedDict):
         K: CastlingPath
@@ -248,16 +249,32 @@ def _generate_castling_moves(board: cb.Board, color: c.Color) -> set[c.Move]:
         q: CastlingPath
 
     castling_paths: CastlingPaths = {
-        "K": {"start": c.Square.e1, "path": [c.Square.f1, c.Square.g1]},
-        "Q": {"start": c.Square.e1, "path": [c.Square.d1, c.Square.c1]},
-        "k": {"start": c.Square.e8, "path": [c.Square.f8, c.Square.g8]},
-        "q": {"start": c.Square.e8, "path": [c.Square.d8, c.Square.c8]},
+        "K": {
+            "start": c.Square.e1,
+            "king_path": [c.Square.f1, c.Square.g1],
+            "full_path": [c.Square.f1, c.Square.g1],
+        },
+        "Q": {
+            "start": c.Square.e1,
+            "king_path": [c.Square.d1, c.Square.c1],
+            "full_path": [c.Square.d1, c.Square.c1, c.Square.b1],
+        },
+        "k": {
+            "start": c.Square.e8,
+            "king_path": [c.Square.f8, c.Square.g8],
+            "full_path": [c.Square.f8, c.Square.g8],
+        },
+        "q": {
+            "start": c.Square.e8,
+            "king_path": [c.Square.d8, c.Square.c8],
+            "full_path": [c.Square.d8, c.Square.c8, c.Square.b8],
+        },
     }
 
     def path_is_clear(castling_path: Literal["K", "Q", "k", "q"]) -> bool:
         return all(
             board.get_piece_by_square(s) is None
-            for s in castling_paths[castling_path]["path"]
+            for s in castling_paths[castling_path]["full_path"]
         )
 
     def path_has_no_intermediate_checks(
@@ -267,7 +284,7 @@ def _generate_castling_moves(board: cb.Board, color: c.Color) -> set[c.Move]:
             _board_would_be_in_check_after_move(
                 board, c.Move(castling_paths[castling_path]["start"], s)
             )
-            for s in castling_paths[castling_path]["path"]
+            for s in castling_paths[castling_path]["king_path"]
         )
 
     if color == c.Color.WHITE:

@@ -276,8 +276,9 @@ class Board:
         return _MoveResult(source_piece, captured_piece, is_en_passant, is_castling)
 
     def _update_castling_availability_after_move(
-        self, moved_piece: c.Piece, move_source: c.Square
+        self, moved_piece: c.Piece, move_source: c.Square, move_target: c.Square
     ) -> None:
+        self.castling_availability.disable_for_square(move_target)
         if moved_piece.ptype == c.Type.KING:
             self.castling_availability.disable_for_color(moved_piece.color)
         elif moved_piece.ptype == c.Type.ROOK:
@@ -355,7 +356,9 @@ class Board:
             )
         )
 
-        self._update_castling_availability_after_move(moved_piece, move.source)
+        self._update_castling_availability_after_move(
+            moved_piece, move.source, move.target
+        )
         self._update_en_passant_target_after_move(moved_piece, move)
         self._update_board_clocks_after_move(moved_piece, is_capture)
         self.active_color = self.active_color.invert()

@@ -98,11 +98,11 @@ class _Info(_EngineCommand):
     pv: list[c.Move]
 
 
-initial_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+_initial_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 
 @dataclass(frozen=True)
-class UciEvaluationInfoReporter(ce.EvaluationInfoReporter):
+class _UciEvaluationInfoReporter(ce.EvaluationInfoReporter):
     _uci_engine: UciEngine
 
     def report_info(
@@ -124,8 +124,8 @@ class UciEngine:
     _engine_thread: Thread | None
 
     def __init__(self) -> None:
-        self._board = cb.Board.from_fen(initial_position_fen)
-        info_reporter = UciEvaluationInfoReporter(self)
+        self._board = cb.Board.from_fen(_initial_position_fen)
+        info_reporter = _UciEvaluationInfoReporter(self)
         self._evaluator = ce.Evaluator(info_reporter)
         self._engine_thread = None
 
@@ -168,7 +168,7 @@ class UciEngine:
                 # command, it can be presumed they want to restart the game (even though
                 # they should've sent a position command in between).
                 logger.info("Resetting board to initial position")
-                self._board = cb.Board.from_fen(initial_position_fen)
+                self._board = cb.Board.from_fen(_initial_position_fen)
 
             case _Position(fen, moves):
                 self._reset_engine_params()
@@ -351,7 +351,7 @@ class _UciArgParser:
         position_identifier: str, fen_or_movelist: list[str]
     ) -> tuple[str, list[str]] | None:
         if position_identifier == "startpos":
-            initial_fen = initial_position_fen
+            initial_fen = _initial_position_fen
 
         elif position_identifier == "fen":
             if len(fen_or_movelist) == 0:

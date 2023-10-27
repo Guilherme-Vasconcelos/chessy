@@ -80,6 +80,12 @@ def test_regular_moves(initial_fen: str, move: c.Move, expected_fen: str) -> Non
             c.Move(c.Square.g7, c.Square.h6),
             "rnbqkbnr/ppp2p1p/7p/3pp3/3PP3/8/PPP2PPP/RN1QKBNR w KQkq - 0 4",
         ),
+        (
+            # Capture that loses castling rights for black.
+            "r3k3/1B6/2n5/8/8/8/4K3/8 w q - 0 9",
+            c.Move(c.Square.b7, c.Square.a8),
+            "B3k3/8/2n5/8/8/8/4K3/8 b - - 0 9",
+        ),
     ],
 )
 def test_captures(initial_fen: str, move: c.Move, expected_fen: str) -> None:
