@@ -8,7 +8,7 @@ from chessy import utils
 
 
 class Color(Enum):
-    WHITE = auto()
+    WHITE = 0
     BLACK = auto()
 
     def invert(self) -> Color:
@@ -20,7 +20,7 @@ class Color(Enum):
 
 
 class Type(Enum):
-    PAWN = auto()
+    PAWN = 0
     KNIGHT = auto()
     BISHOP = auto()
     ROOK = auto()
@@ -99,7 +99,7 @@ class Piece:
 
 @total_ordering
 class Square(Enum):
-    a1 = 0  # To make sure we can index Board through squares.
+    a1 = 0
     b1 = auto()
     c1 = auto()
     d1 = auto()

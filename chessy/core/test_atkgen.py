@@ -18,7 +18,7 @@ def assert_eq_after_atk_gen(
     board = (
         make_empty_board() if board_as_fen is None else cb.Board.from_fen(board_as_fen)
     )
-    attacks = ca.generate_attacks(board, initial_square, piece)
+    attacks = ca.generate_attacks(board.get_blockers(), initial_square, piece)
     assert attacks == expected_attacks
 
 

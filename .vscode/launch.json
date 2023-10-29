@@ -10,6 +10,13 @@
       "request": "launch",
       "module": "chessy.core",
       "justMyCode": true
+    },
+    {
+      "name": "chessy (playground)",
+      "type": "python",
+      "request": "launch",
+      "module": "chessy.playground",
+      "justMyCode": true
     }
   ]
 }

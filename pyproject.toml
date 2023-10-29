@@ -17,7 +17,8 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "~3.11"
+numpy = "^1.26.1"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.6.1"
@@ -27,6 +28,7 @@ pytest = "^7.4.3"
 [tool.poetry.scripts]
 chessy = "chessy.core.__main__:main"
 prof = "chessy.prof.__main__:main"
+playground = "chessy.playground.__main__:main"
 
 [tool.mypy]
 strict = true
@@ -49,7 +51,6 @@ select = [
     "C4",
     "DTZ",
     "FA",
-    "ISC",
     "ICN",
     "G",
     "PIE",
@@ -68,8 +69,6 @@ ignore = [
     # and invariants). If these states aren't met, it's a bug. Relying on buggy behavior is non-specified behavior,
     # so it doesn't matter if the behavior varies between production and development.
     "S101",
-    # `ruff format` says this rule can cause conflicts and recommends turning it off.
-    "ISC001",
 ]
 unfixable = [
     # Better DX: these fixes usually delete WIP code.

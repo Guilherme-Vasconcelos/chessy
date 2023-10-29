@@ -1,0 +1,121 @@
+         231913920 function calls (229096402 primitive calls) in 106.086 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000  109.554  109.554 __main__.py:49(calc)
+        1    0.000    0.000  109.554  109.554 evaluator.py:41(start_search)
+        3    0.000    0.000  109.554   36.518 evaluator.py:67(_perform_search)
+  9762/60    0.038    0.000  109.517    1.825 evaluator.py:97(_minimax)
+  1231330    0.855    0.000  105.855    0.000 movegen.py:206(generate_legal_moves)
+    19087    0.020    0.000  103.611    0.005 movegen.py:220(generate_all_legal_moves)
+    19087    0.678    0.000  103.581    0.005 movegen.py:225(<setcomp>)
+     9322    0.062    0.000  103.181    0.011 evaluator.py:165(_evaluate_score)
+     9322    0.025    0.000  101.663    0.011 evaluator.py:130(_calculate_mobility)
+   468599    0.649    0.000   87.408    0.000 movegen.py:10(_board_would_be_in_check_after_move)
+   487806    3.606    0.000   67.131    0.000 board.py:162(is_in_check)
+  1301985    1.242    0.000   43.216    0.000 atkgen.py:240(generate_attacks)
+   507529    0.648    0.000   38.562    0.000 atkgen.py:229(_generate_queen_attacks)
+  1092352    0.524    0.000   35.930    0.000 atkgen.py:64(_apply_multidirectional_add)
+  1092352    3.144    0.000   35.406    0.000 atkgen.py:70(<setcomp>)
+  4369408    9.594    0.000   31.268    0.000 atkgen.py:23(_apply_directional_add)
+   546435    0.911    0.000   21.890    0.000 atkgen.py:214(_generate_bishop_attacks)
+478361/456903    1.570    0.000   20.842    0.000 board.py:366(make_move)
+   487806    4.144    0.000   19.613    0.000 board.py:153(_get_king_position_by_color)
+   545917    0.888    0.000   18.752    0.000 atkgen.py:204(_generate_rook_attacks)
+  1231330    0.940    0.000   16.709    0.000 movegen.py:188(_generate_pseudolegal_moves)
+ 20767008    7.118    0.000   16.259    0.000 enum.py:686(__call__)
+ 15223772    7.041    0.000   15.469    0.000 board.py:61(iter_board_slots)
+ 29006613    8.467    0.000   11.522    0.000 enum.py:193(__get__)
+ 20767008    8.413    0.000    9.141    0.000 enum.py:1091(__new__)
+   478361    1.178    0.000    7.810    0.000 board.py:293(_make_move__state_update)
+ 10631721    3.562    0.000    7.601    0.000 board.py:143(get_piece_by_square)
+  3529309    2.708    0.000    6.678    0.000 bitboard.py:19(get_by_square)
+  1913444    1.690    0.000    6.120    0.000 board.py:146(_set_piece_by_square)
+  5442753    3.841    0.000    6.005    0.000 bitboard.py:10(_sq_uint_value)
+   155840    0.483    0.000    5.777    0.000 movegen.py:22(_generate_nonpawn_pseudolegal_standard_moves)
+    19207    0.131    0.000    5.589    0.000 movegen.py:42(_generate_castling_moves)
+   478361    0.852    0.000    4.885    0.000 board.py:453(unmake_move)
+   478361    1.205    0.000    4.064    0.000 copy.py:66(copy)
+ 13139319    2.905    0.000    3.908    0.000 enum.py:1224(__hash__)
+     9762    0.013    0.000    3.871    0.000 board.py:189(_validate_move)
+  4600411    1.206    0.000    3.804    0.000 {method 'add' of 'set' objects}
+   159280    1.066    0.000    3.511    0.000 movegen.py:129(_generate_pawns_pseudolegal_moves)
+  3529309    1.016    0.000    3.140    0.000 atkgen.py:41(_ok_next)
+ 29006613    3.055    0.000    3.055    0.000 enum.py:1249(value)
+    38390    0.081    0.000    2.787    0.000 {built-in method builtins.__build_class__}
+    38390    0.338    0.000    2.675    0.000 typing.py:2946(__new__)
+  3368179    1.131    0.000    2.459    0.000 __init__.py:178(file)
+   478361    1.049    0.000    2.410    0.000 board.py:324(_update_en_passant_target_after_move)
+14532498/11746140    1.610    0.000    2.220    0.000 {built-in method builtins.hash}
+   478361    1.142    0.000    2.019    0.000 board.py:199(_move_is_castling)
+  1393179    0.552    0.000    1.983    0.000 <string>:2(__hash__)
+   478361    0.347    0.000    1.957    0.000 board.py:403(_unmake_move__state_source_update)
+   478361    1.296    0.000    1.914    0.000 copy.py:259(_reconstruct)
+   960981    0.868    0.000    1.910    0.000 bitboard.py:24(set_by_square)
+   478361    0.310    0.000    1.816    0.000 board.py:430(_unmake_move__state_target_update)
+   952463    0.793    0.000    1.785    0.000 bitboard.py:28(pop_by_square)
+    38390    0.078    0.000    1.765    0.000 typing.py:2969(<dictcomp>)
+   134365    0.358    0.000    1.687    0.000 typing.py:168(_type_check)
+  4252100    1.562    0.000    1.562    0.000 __init__.py:14(invert)
+     9322    0.387    0.000    1.289    0.000 evaluator.py:152(_calculate_piece_counts)
+   134365    0.108    0.000    0.985    0.000 typing.py:159(_type_convert)
+   478361    0.413    0.000    0.927    0.000 board.py:315(_update_castling_availability_after_move)
+   134365    0.122    0.000    0.866    0.000 typing.py:845(__init__)
+   134365    0.736    0.000    0.736    0.000 {built-in method builtins.compile}
+  4607028    0.643    0.000    0.643    0.000 {built-in method builtins.isinstance}
+   478361    0.267    0.000    0.605    0.000 board.py:220(_move_is_en_passant)
+   154960    0.182    0.000    0.576    0.000 movegen.py:137(append_maybe_promotion_move)
+  4369408    0.569    0.000    0.569    0.000 atkgen.py:16(__post_init__)
+   491755    0.510    0.000    0.510    0.000 __init__.py:213(disable_for_square)
+   528560    0.261    0.000    0.472    0.000 atkgen.py:224(_generate_knight_attacks_precalc)
+  1977093    0.458    0.000    0.458    0.000 enum.py:796(<genexpr>)
+   478361    0.436    0.000    0.436    0.000 {method '__reduce_ex__' of 'object' objects}
+   468599    0.357    0.000    0.430    0.000 <string>:2(__init__)
+   516751    0.372    0.000    0.372    0.000 {built-in method __new__ of type object at 0x7f1130356540}
+   478361    0.355    0.000    0.355    0.000 board.py:357(_update_board_clocks_after_move)
+  1074920    0.222    0.000    0.316    0.000 typing.py:895(__eq__)
+  2151581    0.290    0.000    0.290    0.000 {built-in method builtins.issubclass}
+   956722    0.276    0.000    0.276    0.000 {built-in method builtins.getattr}
+   254654    0.098    0.000    0.274    0.000 __init__.py:182(last_file)
+   478361    0.184    0.000    0.246    0.000 copyreg.py:104(__newobj__)
+   314240    0.108    0.000    0.237    0.000 __init__.py:174(rank)
+   453316    0.200    0.000    0.200    0.000 __init__.py:86(direction_factor)
+   169395    0.126    0.000    0.197    0.000 atkgen.py:195(_generate_pawn_attacks_precalc)
+  1913444    0.164    0.000    0.164    0.000 {built-in method builtins.setattr}
+  1634830    0.157    0.000    0.157    0.000 enum.py:1180(_missing_)
+     9322    0.012    0.000    0.153    0.000 {built-in method builtins.sum}
+   802926    0.143    0.000    0.143    0.000 board.py:140(get_blockers)
+    65254    0.072    0.000    0.141    0.000 evaluator.py:194(<genexpr>)
+     9322    0.021    0.000    0.138    0.000 evaluator.py:154(<dictcomp>)
+   134365    0.093    0.000    0.137    0.000 typing.py:2412(get_origin)
+    37950    0.042    0.000    0.114    0.000 movegen.py:82(path_is_clear)
+   995112    0.112    0.000    0.112    0.000 {method 'get' of 'dict' objects}
+    18644    0.046    0.000    0.103    0.000 evaluator.py:155(<dictcomp>)
+   516752    0.075    0.000    0.075    0.000 {built-in method builtins.hasattr}
+   468599    0.073    0.000    0.073    0.000 __init__.py:230(__post_init__)
+    37950    0.011    0.000    0.066    0.000 {built-in method builtins.all}
+    76518    0.022    0.000    0.062    0.000 movegen.py:83(<genexpr>)
+   555141    0.061    0.000    0.061    0.000 {method 'items' of 'dict' objects}
+   497005    0.059    0.000    0.059    0.000 {built-in method builtins.len}
+   478361    0.053    0.000    0.053    0.000 {method 'pop' of 'list' objects}
+   478365    0.044    0.000    0.044    0.000 {method 'append' of 'list' objects}
+    38390    0.017    0.000    0.039    0.000 {built-in method builtins.any}
+    47053    0.023    0.000    0.023    0.000 enum.py:792(__iter__)
+    76780    0.017    0.000    0.022    0.000 typing.py:2959(<genexpr>)
+   115171    0.017    0.000    0.017    0.000 {method 'get' of 'mappingproxy' objects}
+    19207    0.008    0.000    0.016    0.000 atkgen.py:235(_generate_king_attacks_precalc)
+    19195    0.013    0.000    0.013    0.000 movegen.py:48(CastlingPath)
+    76780    0.013    0.000    0.013    0.000 {method 'update' of 'dict' objects}
+    76780    0.012    0.000    0.012    0.000 {method 'update' of 'set' objects}
+    19195    0.011    0.000    0.011    0.000 movegen.py:53(CastlingPaths)
+    38390    0.007    0.000    0.007    0.000 typing.py:3085(<lambda>)
+     9762    0.007    0.000    0.007    0.000 <string>:2(__eq__)
+     9156    0.004    0.000    0.004    0.000 __init__.py:205(disable_for_color)
+        1    0.000    0.000    0.000    0.000 copyreg.py:113(_slotnames)
+        4    0.000    0.000    0.000    0.000 {method 'startswith' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 evaluator.py:94(_reset_search_params)
+        3    0.000    0.000    0.000    0.000 evaluator.py:20(report_info)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+
+

@@ -25,7 +25,7 @@ def _generate_nonpawn_pseudolegal_standard_moves(
     piece = board.get_piece_by_square(square)
     assert piece is not None and piece.ptype != c.Type.PAWN
 
-    attacks = ca.generate_attacks(board, square, piece)
+    attacks = ca.generate_attacks(board.get_blockers(), square, piece)
     result: set[c.Move] = set()
     for attack in attacks:
         maybe_target_piece = board.get_piece_by_square(attack)
@@ -158,7 +158,7 @@ def _generate_pawns_pseudolegal_moves(board: cb.Board, square: c.Square) -> set[
         else:
             result.add(move)
 
-    attacks = ca.generate_attacks(board, square, pawn)
+    attacks = ca.generate_attacks(board.get_blockers(), square, pawn)
     for attack in attacks:
         if (
             (maybe_attacked_piece := board.get_piece_by_square(attack)) is not None

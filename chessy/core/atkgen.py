@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from functools import cached_property
 
 import chessy.core as c
-import chessy.core.board as cb
+import chessy.core.bitboard as cb
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,11 +20,13 @@ class _DirectionalAdd:
             )
 
 
+# TODO: Remove all this apply_directional_add thing. We can now just magics for
+# sliding pieces generations here.
 def _apply_directional_add(
     start: c.Square,
     directional_add: _DirectionalAdd,
     add_cycles_limit: int | None = None,
-    blockers: cb.Board | None = None,
+    blockers: cb.Bitboard | None = None,
 ) -> set[c.Square]:
     result: set[c.Square] = set()
 
@@ -51,7 +53,7 @@ def _apply_directional_add(
             break
 
         if blockers is not None:
-            is_blocker_hit = blockers.get_piece_by_square(new_square) is not None
+            is_blocker_hit = cb.get_by_square(blockers, new_square)
             if is_blocker_hit:
                 _ok_next()
                 break
@@ -65,7 +67,7 @@ def _apply_multidirectional_add(
     directions: Iterable[_DirectionalAdd],
     square: c.Square,
     add_cycles_limit: int | None = None,
-    blockers: cb.Board | None = None,
+    blockers: cb.Bitboard | None = None,
 ) -> set[c.Square]:
     return {
         atk
@@ -201,7 +203,7 @@ def _generate_pawn_attacks_precalc(square: c.Square, piece: c.Piece) -> set[c.Sq
         return black_tables[square.value]
 
 
-def _generate_rook_attacks(blockers: cb.Board, square: c.Square) -> set[c.Square]:
+def _generate_rook_attacks(blockers: cb.Bitboard, square: c.Square) -> set[c.Square]:
     directions = (
         _DirectionalAdd(8, None),
         _DirectionalAdd(-8, None),
@@ -211,7 +213,7 @@ def _generate_rook_attacks(blockers: cb.Board, square: c.Square) -> set[c.Square
     return _apply_multidirectional_add(directions, square, blockers=blockers)
 
 
-def _generate_bishop_attacks(blockers: cb.Board, square: c.Square) -> set[c.Square]:
+def _generate_bishop_attacks(blockers: cb.Bitboard, square: c.Square) -> set[c.Square]:
     directions = (
         _DirectionalAdd(7, _H),
         _DirectionalAdd(9, _A),
@@ -226,7 +228,7 @@ def _generate_knight_attacks_precalc(square: c.Square) -> set[c.Square]:
     return knight_tables[square.value]
 
 
-def _generate_queen_attacks(blockers: cb.Board, square: c.Square) -> set[c.Square]:
+def _generate_queen_attacks(blockers: cb.Bitboard, square: c.Square) -> set[c.Square]:
     return _generate_bishop_attacks(blockers, square) | _generate_rook_attacks(
         blockers, square
     )
@@ -238,7 +240,7 @@ def _generate_king_attacks_precalc(square: c.Square) -> set[c.Square]:
 
 
 def generate_attacks(
-    blockers: cb.Board, square: c.Square, piece: c.Piece
+    blockers: cb.Bitboard, square: c.Square, piece: c.Piece
 ) -> set[c.Square]:
     """
     Assuming `blockers` is a board indicating which pieces can block `piece`'s

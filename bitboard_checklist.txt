@@ -1,0 +1,8 @@
+- [x] Basic bitboard representation
+    - Allow square manipulation etc.
+- [x] Adapt Board to represent its internal states with bitboards
+    - Done for now. We won't represent *everything* with bitboards just yet, but rather just the blockers so that
+      atkgen becomes more efficient. In the future, we may use bitboards for everything for faster movegen too.
+- [ ] Adapt atkgen/movegen to be more efficient in regards to blockers verifications.
+    - Right now, they use the Board itself for blocker verification. But with bitboards
+      we can make some bitwise manipulations to make it faster.

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from copy import copy
 from dataclasses import dataclass, field
 
 import chessy.core as c
 import chessy.core.atkgen as ca
+import chessy.core.bitboard as cb
 import chessy.core.fen_parser as cf
 import chessy.core.movegen as cm
 
@@ -47,8 +48,34 @@ class _RollbackableMove:
 
 
 @dataclass(slots=True)
+class _BoardState:
+    blockers: cb.Bitboard
+    board: list[c.Piece | None]
+
+    def __init__(self, board: list[c.Piece | None]):
+        self.board = board
+        self.blockers = self._build_board_blockers()
+
+        assert len(board) == BOARD_SIZE
+
+    def iter_board_slots(self) -> Iterator[tuple[c.Square, c.Piece | None]]:
+        for i, s in enumerate(self.board):
+            sq = c.Square(i)
+            yield sq, s
+
+    def _build_board_blockers(self) -> cb.Bitboard:
+        result = cb.Bitboard()
+
+        for sq, piece in self.iter_board_slots():
+            if piece is not None:
+                result = cb.set_by_square(result, sq)
+
+        return result
+
+
+@dataclass(slots=True)
 class Board:
-    _state: list[c.Piece | None]
+    _state: _BoardState
     active_color: c.Color
     castling_availability: c.CastlingAvailability
     en_passant_target: c.Square | None
@@ -65,7 +92,7 @@ class Board:
                 raise UnreachablePositionError(message)
 
         assert_position_cond(
-            (stlen := len(self._state)) == BOARD_SIZE,
+            (stlen := len(self._state.board)) == BOARD_SIZE,
             f"Board has invalid size {stlen}, expected {BOARD_SIZE}",
         )
 
@@ -99,9 +126,10 @@ class Board:
         """
 
         result = cf.parse(fen)
+        state = _BoardState(result.piece_placement)
 
         return Board(
-            result.piece_placement,
+            state,
             result.active_color,
             result.castling_availability,
             result.en_passant_target,
@@ -109,17 +137,24 @@ class Board:
             result.fullmove_number,
         )
 
+    def get_blockers(self) -> cb.Bitboard:
+        return self._state.blockers
+
     def get_piece_by_square(self, square: c.Square) -> c.Piece | None:
-        return self._state[square.value]
+        return self._state.board[square.value]
 
     def _set_piece_by_square(self, square: c.Square, piece: c.Piece | None) -> None:
-        self._state[square.value] = piece
+        if piece is None:
+            self._state.blockers = cb.pop_by_square(self._state.blockers, square)
+        else:
+            self._state.blockers = cb.set_by_square(self._state.blockers, square)
+        self._state.board[square.value] = piece
 
     def _get_king_position_by_color(self, color: c.Color) -> c.Square:
         king_position: c.Square | None = None
-        for i, p in enumerate(self._state):
+        for sq, p in self._state.iter_board_slots():
             if p is not None and p.ptype == c.Type.KING and p.color == color:
-                king_position = c.Square(i)
+                king_position = sq
                 break
         assert king_position is not None
         return king_position
@@ -134,17 +169,18 @@ class Board:
         if color is None:
             color = self.active_color
 
+        blockers = self.get_blockers()
         king_position = self._get_king_position_by_color(color)
         possible_attackers_positions = ca.generate_attacks(
-            self, king_position, c.Piece(c.Type.QUEEN, color)
-        ) | ca.generate_attacks(self, king_position, c.Piece(c.Type.KNIGHT, color))
+            blockers, king_position, c.Piece(c.Type.QUEEN, color)
+        ) | ca.generate_attacks(blockers, king_position, c.Piece(c.Type.KNIGHT, color))
         for position in possible_attackers_positions:
             if (
-                (attacker := self._state[position.value]) is not None
+                (attacker := self.get_piece_by_square(position)) is not None
                 and attacker.color == color.invert()
                 # TODO (perf): We don't need to generate every single attack, but rather
                 # just the ones that are likely to attack `king_position`.
-                and king_position in ca.generate_attacks(self, position, attacker)
+                and king_position in ca.generate_attacks(blockers, position, attacker)
             ):
                 return True
 
