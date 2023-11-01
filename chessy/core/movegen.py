@@ -138,8 +138,7 @@ def _generate_pawns_pseudolegal_moves(board: cb.Board, square: c.Square) -> set[
         assert (
             # pylance wants us to be sure it is not none even though it was
             # already not none the first time
-            pawn
-            is not None
+            pawn is not None
         )
         is_promotion = (
             pawn.color == c.Color.WHITE and square.rank() == seventh_rank

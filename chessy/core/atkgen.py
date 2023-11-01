@@ -86,8 +86,9 @@ class _AttackTables:
                 black_tables.append(set())
                 continue
 
-            for piece in c.Piece(c.Type.PAWN, c.Color.WHITE), c.Piece(
-                c.Type.PAWN, c.Color.BLACK
+            for piece in (
+                c.Piece(c.Type.PAWN, c.Color.WHITE),
+                c.Piece(c.Type.PAWN, c.Color.BLACK),
             ):
                 attacks = self._generate_pawn_attacks(sq, piece)
                 if piece.color == c.Color.WHITE:
@@ -130,8 +131,9 @@ class _AttackTables:
         }
         side1 = direction_factor * 7
         side2 = direction_factor * 9
-        directions = _DirectionalAdd(side1, prevented_files[side1]), _DirectionalAdd(
-            side2, prevented_files[side2]
+        directions = (
+            _DirectionalAdd(side1, prevented_files[side1]),
+            _DirectionalAdd(side2, prevented_files[side2]),
         )
 
         return _apply_multidirectional_add(directions, square, add_cycles_limit=1)

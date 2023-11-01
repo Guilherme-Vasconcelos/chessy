@@ -3,7 +3,7 @@
 # Stop if any commands fail.
 set -e
 
-poetry run black .
+poetry run ruff format .
 poetry run ruff --fix .
 poetry run mypy .
 poetry run pytest
