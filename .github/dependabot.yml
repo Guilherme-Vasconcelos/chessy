@@ -3,11 +3,9 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-    labels: ["dependencies"]
+      interval: "monthly"
 
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "monthly"
-    labels: ["dependencies"]
