@@ -8,7 +8,7 @@ import chessy.core.uci
 
 
 def setup_logging(
-    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO",
 ) -> None:
     logging_config = {
         "version": 1,
