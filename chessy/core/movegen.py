@@ -86,7 +86,7 @@ def _generate_castling_moves(board: cb.Board, color: c.Color) -> set[c.Move]:
         )
 
     def path_has_no_intermediate_checks(
-        castling_path: Literal["K", "Q", "k", "q"]
+        castling_path: Literal["K", "Q", "k", "q"],
     ) -> bool:
         return not any(
             _board_would_be_in_check_after_move(
