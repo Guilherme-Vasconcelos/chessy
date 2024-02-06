@@ -7,37 +7,41 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Poetry
-      uses: abatilo/actions-poetry@v3
+      - name: Set up Poetry
+        uses: abatilo/actions-poetry@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'poetry'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'poetry'
 
-    - name: Validate project metadata
-      run: |
-        poetry check
-        poetry check --lock
+      - name: Validate project metadata
+        run: |
+          poetry check
+          poetry check --lock
 
-    - name: Install dependencies
-      run: poetry install
+      - name: Install dependencies
+        run: poetry install
 
-    - name: Run tests
-      run: poetry run pytest -v
+      - name: Run tests
+        run: poetry run pytest -v
 
-    - name: Check format
-      run: poetry run ruff format --check .
+      - name: Check format
+        run: poetry run ruff format --check .
 
-    - name: Lint
-      run: poetry run ruff .
+      - name: Lint
+        run: poetry run ruff .
 
-    - name: Check types
-      run: poetry run mypy .
+      - name: Check types
+        run: poetry run mypy .

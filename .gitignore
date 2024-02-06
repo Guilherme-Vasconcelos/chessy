@@ -17,3 +17,6 @@ chessy.log*
 
 # Profiling runs.
 *.pstats
+
+# Personal checklist.
+/TODO
