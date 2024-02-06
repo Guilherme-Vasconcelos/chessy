@@ -26,11 +26,10 @@ feel free to contribute if you wish to.
 
 ### Long term:
 
-- Advanced UCI support
+- Advanced UCI support.
     - Adapt playstyle according to `wtime` and `btime`.
     - Ponder.
     - Report more info (e.g. `seldepth`).
-    - Maybe support customization options.
 
 ## Development utils
 - If you're using VSCode, we have a [.vscode](./.vscode) with recommended extensions / settings,

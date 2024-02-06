@@ -6,9 +6,16 @@
   "configurations": [
     {
       "name": "chessy (core)",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "module": "chessy.core",
+      "justMyCode": true
+    },
+    {
+      "name": "chessy (playground)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "chessy.playground",
       "justMyCode": true
     }
   ]
