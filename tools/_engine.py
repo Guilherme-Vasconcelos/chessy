@@ -12,7 +12,7 @@ class Engine:
     _engine: Popen[str]
 
     def __init__(self) -> None:
-        chessy_command = "/usr/bin/env python -m chessy"
+        chessy_command = "/usr/bin/env python -m chessy.core"
         self._engine = Popen(
             chessy_command.split(),  # noqa: S603
             bufsize=1,

@@ -12,11 +12,7 @@ import chessy.core.movegen as cm
 BOARD_SIZE = 64
 
 
-class BoardError(Exception):
-    pass
-
-
-class IllegalMoveError(BoardError):
+class IllegalMoveError(Exception):
     legal_moves: Iterable[c.Move]
 
     def __init__(self, message: str, legal_moves: Iterable[c.Move]) -> None:
@@ -24,7 +20,23 @@ class IllegalMoveError(BoardError):
         self.legal_moves = legal_moves
 
 
-class UnreachablePositionError(BoardError):
+class UnreachablePositionError(Exception):
+    pass
+
+
+class InvalidBoardSizeError(UnreachablePositionError):
+    pass
+
+
+class InvalidHalfmoveClockError(UnreachablePositionError):
+    pass
+
+
+class InvalidFullmoveNumberError(UnreachablePositionError):
+    pass
+
+
+class NoKingError(UnreachablePositionError):
     pass
 
 
@@ -60,29 +72,35 @@ class Board:
         self._validate_current_position()
 
     def _validate_current_position(self) -> None:
-        def assert_position_cond(cond: bool, message: str) -> None:
+        def assert_position_cond(
+            cond: bool, exception: UnreachablePositionError
+        ) -> None:
             if not cond:
-                raise UnreachablePositionError(message)
+                raise exception
 
         assert_position_cond(
             (stlen := len(self._state)) == BOARD_SIZE,
-            f"Board has invalid size {stlen}, expected {BOARD_SIZE}",
+            InvalidBoardSizeError(f"Board has invalid size {stlen}"),
         )
 
         assert_position_cond(
             self.halfmove_clock >= 0,
-            f"Invalid halfmove_clock {self.halfmove_clock}, "
-            "expected a non-negative integer",
+            InvalidHalfmoveClockError(
+                f"Expected a non-negative halfmove clock, got {self.halfmove_clock}"
+            ),
         )
 
         assert_position_cond(
             self.fullmove_number >= 1,
-            f"Invalid fullmove_number {self.fullmove_number}, "
-            "expected a strictly positive integer",
+            InvalidFullmoveNumberError(
+                f"Expected a strictly positive fullmove number, got {self.fullmove_number}"  # noqa: E501
+            ),
         )
 
+        _ = self._get_king_position_by_color(c.Color.WHITE)
+        _ = self._get_king_position_by_color(c.Color.BLACK)
+
         # TODO:
-        # - 1 king for each side.
         # - no pawns on ranks 0 and 7 (they would need to have promoted).
         # - Only at most 1 player can be in check. And if someone is in check,
         #   that someone must be `self.active_color`.
@@ -94,8 +112,8 @@ class Board:
         """
         Create a board from the given FEN.
 
-        Can raise multiple exceptions: `UnreachablePositionError` or any sub-class
-        of `FenValidationError`.
+        Can raise multiple exceptions: any sub-class of either
+        `UnreachablePositionError` or of `FenValidationError`.
         """
 
         result = cf.parse(fen)
@@ -116,12 +134,17 @@ class Board:
         self._state[square.value] = piece
 
     def _get_king_position_by_color(self, color: c.Color) -> c.Square:
+        """
+        Can raise NoKingError if the given color does not have a king.
+        """
+
         king_position: c.Square | None = None
         for i, p in enumerate(self._state):
             if p is not None and p.ptype == c.Type.KING and p.color == color:
                 king_position = c.Square(i)
                 break
-        assert king_position is not None
+        if king_position is None:
+            raise NoKingError(f"Could not find a king for {color}")
         return king_position
 
     def is_in_check(self, color: c.Color | None = None) -> bool:

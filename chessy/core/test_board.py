@@ -273,3 +273,19 @@ def test_move_rollback(initial_fen: str, moves: list[c.Move]) -> None:
         b.unmake_move()
     expected = cb.Board.from_fen(initial_fen)
     assert b == expected
+
+
+@pytest.mark.parametrize(
+    "fen,expected_err",
+    [
+        (
+            "rnbqqbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQQBNR w KQkq - 0 1",
+            cb.NoKingError,
+        )
+    ],
+)
+def test_unreachable_positions(
+    fen: str, expected_err: type[cb.UnreachablePositionError]
+) -> None:
+    with pytest.raises(expected_err):
+        cb.Board.from_fen(fen)

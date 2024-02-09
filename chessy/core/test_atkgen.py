@@ -5,39 +5,49 @@ import chessy.core.atkgen as ca
 import chessy.core.board as cb
 
 
-def make_empty_board() -> cb.Board:
-    return cb.Board.from_fen("8/8/8/8/8/8/8/8 w KQkq - 0 1")
-
-
 def assert_eq_after_atk_gen(
-    board_as_fen: str | None,
+    board_as_fen: str,
     initial_square: c.Square,
     piece: c.Piece,
     expected_attacks: set[c.Square],
 ) -> None:
-    board = (
-        make_empty_board() if board_as_fen is None else cb.Board.from_fen(board_as_fen)
-    )
+    board = cb.Board.from_fen(board_as_fen)
     attacks = ca.generate_attacks(board, initial_square, piece)
     assert attacks == expected_attacks
 
 
+board_fen_almost_empty_kings_e1_e8 = "4k3/8/8/8/8/8/8/4K3 w - - 0 1"
+
+
 @pytest.mark.parametrize(
-    "initial_square,pawn_color,expected_attacks",
+    "initial_square,pawn_color,expected_attacks,board_as_fen",
     [
-        (c.Square.e2, c.Color.WHITE, {c.Square.d3, c.Square.f3}),
-        (c.Square.h4, c.Color.WHITE, {c.Square.g5}),
-        (c.Square.a4, c.Color.WHITE, {c.Square.b5}),
-        (c.Square.c7, c.Color.BLACK, {c.Square.d6, c.Square.b6}),
-        (c.Square.a6, c.Color.BLACK, {c.Square.b5}),
-        (c.Square.h6, c.Color.BLACK, {c.Square.g5}),
+        (
+            c.Square.e2,
+            c.Color.WHITE,
+            {c.Square.d3, c.Square.f3},
+            board_fen_almost_empty_kings_e1_e8,
+        ),
+        (c.Square.h4, c.Color.WHITE, {c.Square.g5}, board_fen_almost_empty_kings_e1_e8),
+        (c.Square.a4, c.Color.WHITE, {c.Square.b5}, board_fen_almost_empty_kings_e1_e8),
+        (
+            c.Square.c7,
+            c.Color.BLACK,
+            {c.Square.d6, c.Square.b6},
+            board_fen_almost_empty_kings_e1_e8,
+        ),
+        (c.Square.a6, c.Color.BLACK, {c.Square.b5}, board_fen_almost_empty_kings_e1_e8),
+        (c.Square.h6, c.Color.BLACK, {c.Square.g5}, board_fen_almost_empty_kings_e1_e8),
     ],
 )
 def test_pawn_attacks(
-    initial_square: c.Square, pawn_color: c.Color, expected_attacks: set[c.Square]
+    initial_square: c.Square,
+    pawn_color: c.Color,
+    expected_attacks: set[c.Square],
+    board_as_fen: str,
 ) -> None:
     piece = c.Piece(c.Type.PAWN, pawn_color)
-    assert_eq_after_atk_gen(None, initial_square, piece, expected_attacks)
+    assert_eq_after_atk_gen(board_as_fen, initial_square, piece, expected_attacks)
 
 
 @pytest.mark.parametrize(
@@ -61,7 +71,7 @@ def test_pawn_attacks(
                 c.Square.g2,
                 c.Square.h2,
             },
-            None,
+            board_fen_almost_empty_kings_e1_e8,
         ),
         (
             c.Square.c3,
@@ -76,15 +86,15 @@ def test_pawn_attacks(
                 c.Square.g3,
                 c.Square.h3,
             },
-            "8/8/8/8/2r5/2R4r/2r5/8 w - - 0 1",
+            "4k3/8/8/8/2r5/2R4r/2r5/4K3 w - - 0 1",
         ),
-        (c.Square.h1, {c.Square.h2, c.Square.g1}, "8/8/8/8/8/8/7q/6qR w - - 0 1"),
+        (c.Square.h1, {c.Square.h2, c.Square.g1}, "4k3/8/8/8/8/8/7q/4K1qR w - - 0 1"),
     ],
 )
 def test_rook_attacks(
     initial_square: c.Square,
     expected_attacks: set[c.Square],
-    board_as_fen: str | None,
+    board_as_fen: str,
 ) -> None:
     piece = c.Piece(c.Type.ROOK, color=None)  # type: ignore
     assert_eq_after_atk_gen(board_as_fen, initial_square, piece, expected_attacks)
@@ -106,7 +116,7 @@ def test_rook_attacks(
                 c.Square.b5,
                 c.Square.a6,
             },
-            None,
+            board_fen_almost_empty_kings_e1_e8,
         ),
         (
             c.Square.c3,
@@ -118,7 +128,7 @@ def test_rook_attacks(
                 c.Square.d2,
                 c.Square.e1,
             },
-            "8/8/8/8/1r1r4/2B5/8/r7 w - - 0 1",
+            "4k3/8/8/8/1r1r4/2B5/5K2/r7 w - - 0 1",
         ),
         (
             c.Square.a8,
@@ -131,14 +141,14 @@ def test_rook_attacks(
                 c.Square.g2,
                 c.Square.h1,
             },
-            "b7/8/8/8/8/8/8/8 w - - 0 1",
+            "b3k3/8/8/8/8/8/8/4K3 w - - 0 1",
         ),
     ],
 )
 def test_bishop_attacks(
     initial_square: c.Square,
     expected_attacks: set[c.Square],
-    board_as_fen: str | None,
+    board_as_fen: str,
 ) -> None:
     piece = c.Piece(c.Type.BISHOP, color=None)  # type: ignore
     assert_eq_after_atk_gen(board_as_fen, initial_square, piece, expected_attacks)
@@ -169,7 +179,9 @@ def test_knight_attacks(
     expected_attacks: set[c.Square],
 ) -> None:
     piece = c.Piece(c.Type.KNIGHT, color=None)  # type: ignore
-    assert_eq_after_atk_gen(None, initial_square, piece, expected_attacks)
+    assert_eq_after_atk_gen(
+        board_fen_almost_empty_kings_e1_e8, initial_square, piece, expected_attacks
+    )
 
 
 @pytest.mark.parametrize(
@@ -194,14 +206,14 @@ def test_knight_attacks(
                 c.Square.h1,
                 c.Square.b2,
             },
-            "8/8/8/8/8/8/1k6/Q7 w - - 0 1",
+            "8/8/8/8/8/8/1k3K2/Q7 b - - 0 1",
         )
     ],
 )
 def test_queen_attacks(
     initial_square: c.Square,
     expected_attacks: set[c.Square],
-    board_as_fen: str | None,
+    board_as_fen: str,
 ) -> None:
     piece = c.Piece(c.Type.QUEEN, color=None)  # type: ignore
     assert_eq_after_atk_gen(board_as_fen, initial_square, piece, expected_attacks)
@@ -234,4 +246,6 @@ def test_king_attacks(
     initial_square: c.Square, expected_attacks: set[c.Square]
 ) -> None:
     piece = c.Piece(c.Type.KING, color=None)  # type: ignore
-    assert_eq_after_atk_gen(None, initial_square, piece, expected_attacks)
+    assert_eq_after_atk_gen(
+        board_fen_almost_empty_kings_e1_e8, initial_square, piece, expected_attacks
+    )
