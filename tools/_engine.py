@@ -3,7 +3,6 @@ If you need to write a tool that needs to call chessy for whatever reason, this
 is a stdin/stdout wrapper to communicate with the engine through the UCI protocol.
 """
 
-
 from atexit import register
 from subprocess import PIPE, Popen
 
