@@ -38,10 +38,10 @@ jobs:
         run: poetry run pytest -v
 
       - name: Check format
-        run: poetry run ruff format --check .
+        run: poetry run ruff format --diff .
 
       - name: Lint
-        run: poetry run ruff .
+        run: poetry run ruff check .
 
       - name: Check types
         run: poetry run mypy .

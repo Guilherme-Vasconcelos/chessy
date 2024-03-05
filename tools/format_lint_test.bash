@@ -4,6 +4,6 @@
 set -e
 
 poetry run ruff format .
-poetry run ruff --fix .
+poetry run ruff check --fix .
 poetry run mypy .
 poetry run pytest
