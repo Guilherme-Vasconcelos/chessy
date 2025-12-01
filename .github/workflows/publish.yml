@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build and publish to pypi
         uses: JRubics/poetry-publish@7100bd02517e9f82452e6247849042f6c74dde04
